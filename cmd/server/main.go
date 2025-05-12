@@ -7,6 +7,7 @@ import (
 	"github.com/vysogota0399/secman/internal/secman"
 	"github.com/vysogota0399/secman/internal/secman/auth"
 	"github.com/vysogota0399/secman/internal/secman/config"
+	"github.com/vysogota0399/secman/internal/secman/http"
 	"github.com/vysogota0399/secman/internal/secman/storages"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -30,8 +31,8 @@ func CreateApp() fx.Option {
 
 			logging.MustZapLogger,
 			secman.NewCore,
-			secman.NewHTTPServer,
-			secman.NewRouter,
+			http.NewRouter,
+			http.NewServer,
 
 			fx.Annotate(storages.NewStorage, fx.As(new(secman.IStorage))),
 			fx.Annotate(auth.NewAuth, fx.As(new(secman.IAuth))),
@@ -51,6 +52,4 @@ func info(lg *logging.ZapLogger) {
 	)
 }
 
-func runServer(server *secman.HTTPServer) {
-	server.Start(context.Background())
-}
+func runServer(server *http.Server) {}

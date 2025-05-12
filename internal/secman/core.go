@@ -69,3 +69,16 @@ func (c *Core) IsSealed() bool {
 
 	return c.isSealed
 }
+
+func (c *Core) Unseal(ctx context.Context, key []byte) error {
+	c.sealedMtx.Lock()
+	defer c.sealedMtx.Unlock()
+
+	if err := c.Barrier.Unseal(ctx, key); err != nil {
+		return err
+	}
+
+	c.isSealed = false
+
+	return nil
+}

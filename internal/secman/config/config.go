@@ -1,27 +1,44 @@
 package config
 
 import (
+	"os"
+
 	"github.com/caarlos0/env"
 	"go.uber.org/zap/zapcore"
 )
 
 type Config struct {
-	LogLevel int            `env:"LOG_LEVEL" default:"-1" json:"log_level"`
-	Address  string         `env:"ADDRESS" default:"0.0.0.0:8080" json:"address"`
-	Auth     map[string]any `json:"auth"`
-	Storage  map[string]any `json:"storage"`
+	FileStoragePath string         `env:"FILE_STORAGE_PATH"`
+	LogLevel        int            `env:"LOG_LEVEL" envDefault:"0" yml:"log_level"`
+	Server          Server         `yml:"server"`
+	Auth            map[string]any `yml:"auth"`
+	Storage         map[string]any `yml:"storage"`
 }
 
-func NewConfig() *Config {
+type Server struct {
+	Address string `yml:"address"`
+}
+
+func NewConfig() (*Config, error) {
 	cfg := &Config{
 		LogLevel: -1,
 	}
 
-	if err := env.Parse(cfg); err != nil {
-		panic(err)
+	if path, ok := os.LookupEnv("FILE_STORAGE_PATH"); ok {
+		cfg.FileStoragePath = path
+	} else {
+		cfg.FileStoragePath = "config.yml"
 	}
 
-	return cfg
+	if err := parseYML(cfg); err != nil {
+		return nil, err
+	}
+
+	if err := env.Parse(cfg); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
 }
 
 func (c *Config) LLevel() zapcore.Level {

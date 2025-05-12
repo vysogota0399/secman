@@ -28,6 +28,11 @@ func (b *DummyBarrier) Unseal(ctx context.Context, key []byte) error {
 	b.log.InfoCtx(ctx, "Unsealing barrier")
 	defer b.log.InfoCtx(ctx, "Unsealed barrier")
 
+	b.sealedLock.Lock()
+	defer b.sealedLock.Unlock()
+
+	b.sealed = false
+
 	return nil
 }
 
