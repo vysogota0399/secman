@@ -3,13 +3,12 @@ package main
 import (
 	"context"
 
+	"github.com/vysogota0399/secman/internal/engines/logopass"
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
-	"github.com/vysogota0399/secman/internal/secman/auth"
 	"github.com/vysogota0399/secman/internal/secman/bariers"
 	"github.com/vysogota0399/secman/internal/secman/config"
 	"github.com/vysogota0399/secman/internal/secman/http"
-	"github.com/vysogota0399/secman/internal/secman/repositories"
 	"github.com/vysogota0399/secman/internal/secman/storages"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -36,12 +35,13 @@ func CreateApp() fx.Option {
 			http.NewRouter,
 			http.NewServer,
 
-			fx.Annotate(repositories.NewSessions, fx.As(new(auth.SessionsRepository))),
-			fx.Annotate(repositories.NewUsers, fx.As(new(auth.UsersRepository))),
+			// fx.Annotate(repositories.NewSessions, fx.As(new(auth.SessionsRepository))),
+			// fx.Annotate(repositories.NewUsers, fx.As(new(auth.UsersRepository))),
 
 			fx.Annotate(storages.NewStorage, fx.As(new(secman.IStorage))),
-			fx.Annotate(auth.NewAuth, fx.As(new(secman.IAuth))),
 			fx.Annotate(bariers.NewDummyBarrier, fx.As(new(secman.IBarrier))),
+
+			AsEngines(logopass.NewEngine),
 		),
 		fx.Invoke(
 			info,
@@ -59,3 +59,13 @@ func info(lg *logging.ZapLogger) {
 }
 
 func runServer(server *http.Server) {}
+
+func AsEngines(f any, ants ...fx.Annotation) any {
+	ants = append(ants, fx.ResultTags(`group:"engines"`))
+	ants = append(ants, fx.As(new(secman.Engine)))
+
+	return fx.Annotate(
+		f,
+		ants...,
+	)
+}

@@ -7,8 +7,3 @@ storage:
   port: 6379
   password: ""
   db: 0
-
-auth:
-  type: jwt
-  token_ttl: 1h
-  secret_key: "secret"
