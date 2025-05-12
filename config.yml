@@ -1,2 +1,14 @@
 server:
   address: 127.0.0.1:8080
+
+storage:
+  type: redis
+  host: 127.0.0.1
+  port: 6379
+  password: ""
+  db: 0
+
+auth:
+  type: jwt
+  token_ttl: 1h
+  secret_key: "secret"

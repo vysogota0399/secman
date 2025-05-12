@@ -81,6 +81,10 @@ type Router struct {
 func NewRouter(core *secman.Core) *Router {
 	r := &Router{router: gin.New(), core: core}
 	api := r.router.Group("/api")
+	api.Use(
+		gin.Logger(),
+		gin.Recovery(),
+	)
 
 	{
 		sealed := api.Group("/")

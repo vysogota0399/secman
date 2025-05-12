@@ -43,12 +43,14 @@ type Core struct {
 	Auth      IAuth
 }
 
-func NewCore(lc fx.Lifecycle, log *logging.ZapLogger, config *config.Config) *Core {
+func NewCore(lc fx.Lifecycle, log *logging.ZapLogger, config *config.Config, barrier IBarrier, auth IAuth) *Core {
 	core := &Core{
 		Log:       log,
 		sealedMtx: sync.RWMutex{},
 		isSealed:  true,
 		Config:    config,
+		Auth:      auth,
+		Barrier:   barrier,
 	}
 
 	lc.Append(

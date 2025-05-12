@@ -14,8 +14,8 @@ import (
 type JWT struct {
 	TokenTTL  time.Duration
 	SecretKey string
-	sessRep   *repositories.Sessions
-	usersRep  *repositories.Users
+	sessRep   SessionsRepository
+	usersRep  UsersRepository
 	lg        *logging.ZapLogger
 }
 
@@ -24,14 +24,29 @@ type JWTConfig struct {
 	SecretKey string
 }
 
-func NewJWTConfig(cfg map[string]any) *JWTConfig {
-	return &JWTConfig{
-		TokenTTL:  cfg["token_ttl"].(time.Duration),
-		SecretKey: cfg["secret_key"].(string),
+func NewJWTConfig(cfg map[string]any) (*JWTConfig, error) {
+	tokenTTLStr, ok := cfg["token_ttl"].(string)
+	if !ok {
+		return nil, fmt.Errorf("jwt: token_ttl is not a string")
 	}
+
+	tokenTTL, err := time.ParseDuration(tokenTTLStr)
+	if err != nil {
+		return nil, fmt.Errorf("jwt: invalid token_ttl format: %w", err)
+	}
+
+	secretKey, ok := cfg["secret_key"].(string)
+	if !ok {
+		return nil, fmt.Errorf("jwt: secret_key is not a string")
+	}
+
+	return &JWTConfig{
+		TokenTTL:  tokenTTL,
+		SecretKey: secretKey,
+	}, nil
 }
 
-func NewJWT(cfg *JWTConfig, sessRep *repositories.Sessions, usersRep *repositories.Users, lg *logging.ZapLogger) *JWT {
+func NewJWT(cfg *JWTConfig, sessRep SessionsRepository, usersRep UsersRepository, lg *logging.ZapLogger) *JWT {
 	return &JWT{
 		TokenTTL:  cfg.TokenTTL,
 		SecretKey: cfg.SecretKey,

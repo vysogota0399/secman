@@ -16,7 +16,7 @@ func NewUnseal(core *secman.Core) *Unseal {
 }
 
 type UnsealRequest struct {
-	Key []byte `json:"key"`
+	Key string `json:"key" form:"key" binding:"required"`
 }
 
 func (h *Unseal) Handler() func(c *gin.Context) {
@@ -32,7 +32,7 @@ func (h *Unseal) Handler() func(c *gin.Context) {
 			return
 		}
 
-		if err := h.core.Unseal(c, req.Key); err != nil {
+		if err := h.core.Unseal(c, []byte(req.Key)); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
