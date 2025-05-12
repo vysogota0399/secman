@@ -18,16 +18,16 @@ type Session struct {
 }
 
 type Sessions struct {
-	lg      *logging.ZapLogger
-	storage secman.IBarrier
+	lg *logging.ZapLogger
+	b  secman.IBarrier
 }
 
-func NewSessions(lg *logging.ZapLogger, storage secman.IBarrier) *Sessions {
-	return &Sessions{lg: lg, storage: storage}
+func NewSessions(lg *logging.ZapLogger, b secman.IBarrier) *Sessions {
+	return &Sessions{lg: lg, b: b}
 }
 
 func (s *Sessions) Get(ctx context.Context, sid string) (Session, error) {
-	data, err := s.storage.Get(ctx, "sys/sessions/"+sid)
+	data, err := s.b.Get(ctx, "sys/sessions/"+sid)
 	if err != nil {
 		return Session{}, err
 	}
@@ -52,7 +52,7 @@ func (s *Sessions) Create(ctx context.Context, sess *Session) error {
 		Value: session,
 	}
 
-	if err := s.storage.Update(ctx, "sys/sessions/"+sess.UUID, entry); err != nil {
+	if err := s.b.Update(ctx, "sys/sessions/"+sess.UUID, entry); err != nil {
 		return err
 	}
 

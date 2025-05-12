@@ -25,25 +25,30 @@ type Router struct {
 	router *gin.Engine
 }
 
+func NewRouter() *Router {
+	router := gin.New()
+	router.Use(gin.Recovery())
+	router.Use(gin.Logger())
+
+	return &Router{router: router}
+}
+
 type HTTPServer struct {
 	Router *Router
 	srv    *http.Server
-	cfg    *Config
 	lg     *logging.ZapLogger
 }
 
-func NewHTTPServer(lc fx.Lifecycle, cfg *Config, r *Router, lg *logging.ZapLogger) *HTTPServer {
+func NewHTTPServer(lc fx.Lifecycle, core *Core, r *Router, lg *logging.ZapLogger) *HTTPServer {
 	s := &HTTPServer{
-		srv:    &http.Server{Addr: cfg.Address, Handler: r.router, ReadHeaderTimeout: time.Minute},
+		srv:    &http.Server{Addr: core.Config.Address, Handler: r.router, ReadHeaderTimeout: time.Minute},
 		Router: r,
-		cfg:    cfg,
 		lg:     lg,
 	}
 
 	lc.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
-				lg.InfoCtx(ctx, "Starting HTTP server", zap.Any("cfg", s.cfg))
 				return s.Start(ctx)
 			},
 			OnStop: func(ctx context.Context) error {
@@ -56,7 +61,7 @@ func NewHTTPServer(lc fx.Lifecycle, cfg *Config, r *Router, lg *logging.ZapLogge
 }
 
 func (s *HTTPServer) Start(ctx context.Context) error {
-	ln, err := net.Listen("tcp", s.cfg.Address)
+	ln, err := net.Listen("tcp", s.srv.Addr)
 	if err != nil {
 		return err
 	}

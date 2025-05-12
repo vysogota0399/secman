@@ -5,6 +5,9 @@ import (
 	"sync"
 
 	"github.com/vysogota0399/secman/internal/logging"
+	"github.com/vysogota0399/secman/internal/secman/config"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 type Entry struct {
@@ -19,15 +22,15 @@ type IStorage interface {
 	Delete(ctx context.Context, path string) error
 }
 
-type IBarrier interface {
-	IStorage
-	Unseal(ctx context.Context, key []byte) error
-}
-
 type IAuth interface {
 	Login(ctx context.Context, path string) (string, error)
 	Authorize(ctx context.Context, token string) error
 	Authenticate(ctx context.Context, login, password string) error
+}
+
+type IBarrier interface {
+	IStorage
+	Unseal(ctx context.Context, key []byte) error
 }
 
 type Core struct {
@@ -35,18 +38,29 @@ type Core struct {
 	sealedMtx sync.RWMutex
 	Log       *logging.ZapLogger
 	Barrier   IBarrier
-	Auth      IAuth
 	Parent    *Core
+	Config    *config.Config
+	Auth      IAuth
 }
 
-func NewRootCore(log *logging.ZapLogger, barrier IBarrier, auth IAuth) *Core {
-	return &Core{
+func NewCore(lc fx.Lifecycle, log *logging.ZapLogger, config *config.Config) *Core {
+	core := &Core{
 		Log:       log,
-		Barrier:   barrier,
-		Auth:      auth,
 		sealedMtx: sync.RWMutex{},
 		isSealed:  true,
+		Config:    config,
 	}
+
+	lc.Append(
+		fx.Hook{
+			OnStart: func(ctx context.Context) error {
+				log.InfoCtx(ctx, "Starting core", zap.Any("config", core.Config))
+				return nil
+			},
+		},
+	)
+
+	return core
 }
 
 func (c *Core) IsSealed() bool {

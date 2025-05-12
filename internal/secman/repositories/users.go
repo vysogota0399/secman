@@ -29,16 +29,16 @@ func (u *User) HashPwd() error {
 }
 
 type Users struct {
-	lg      *logging.ZapLogger
-	storage secman.IStorage
+	lg *logging.ZapLogger
+	b  secman.IBarrier
 }
 
-func NewUsers(lg *logging.ZapLogger, storage secman.IStorage) *Users {
-	return &Users{lg: lg, storage: storage}
+func NewUsers(lg *logging.ZapLogger, b secman.IBarrier) *Users {
+	return &Users{lg: lg, b: b}
 }
 
 func (u *Users) Get(ctx context.Context, uuid string) (User, error) {
-	data, err := u.storage.Get(ctx, "sys/users/"+uuid)
+	data, err := u.b.Get(ctx, "sys/users/"+uuid)
 	if err != nil {
 		return User{}, err
 	}

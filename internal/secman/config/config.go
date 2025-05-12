@@ -1,4 +1,4 @@
-package secman
+package config
 
 import (
 	"github.com/caarlos0/env"
