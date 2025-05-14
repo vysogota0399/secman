@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman/iam/repositories"
@@ -18,7 +19,8 @@ type SessionsRepository interface {
 
 type UsersRepository interface {
 	Get(ctx context.Context, userID string) (repositories.User, error)
-	Create(ctx context.Context, user *repositories.User) error
+	Update(ctx context.Context, user *repositories.User) error
+	GetOk(ctx context.Context, login string) (repositories.User, bool, error)
 }
 
 var (
@@ -66,14 +68,19 @@ func (c *Core) Register(ctx context.Context, user repositories.User) error {
 	c.registrateMtx.Lock()
 	defer c.registrateMtx.Unlock()
 
-	foundUser, err := c.usersRep.Get(ctx, user.Login)
+	user.CreatedAt = time.Now()
+	_, ok, err := c.usersRep.GetOk(ctx, user.Login)
 	if err != nil {
-		return fmt.Errorf("iam/core registrate user %s failed error: %w", user.Login, err)
+		return fmt.Errorf("iam/core search user %s error: %w", user.Login, err)
 	}
 
-	if !foundUser.Empty() {
-		return fmt.Errorf("iam/core registrate user %s failed error: %w", user.Login, ErrUserAlreadyExists)
+	if ok {
+		return fmt.Errorf("iam/core registrate user %s failed, user already exists: %w", user.Login, ErrUserAlreadyExists)
 	}
 
-	return c.usersRep.Create(ctx, &user)
+	if createErr := c.usersRep.Update(ctx, &user); createErr != nil {
+		return fmt.Errorf("iam/core registrate user %s failed error: %w", user.Login, createErr)
+	}
+
+	return nil
 }

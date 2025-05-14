@@ -60,7 +60,7 @@ func newRedisStorage(lg *logging.ZapLogger, config RedisConfig) *RedisStorage {
 func (s *RedisStorage) Get(ctx context.Context, path string) (secman.PhysicalEntry, error) {
 	record := s.rdb.Get(ctx, path)
 	if record.Err() == redis.Nil {
-		return secman.PhysicalEntry{}, nil
+		return secman.PhysicalEntry{}, secman.ErrEntryNotFound
 	}
 
 	res, err := record.Bytes()

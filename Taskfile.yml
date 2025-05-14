@@ -22,6 +22,10 @@ tasks:
     cmds:
       - "curl -v http://127.0.0.1:8080/api/engine/auth/logopass/params | jq"
 
+  register:
+    cmds:
+      - "curl -v -X POST -d '{\"login\": \"admin\", \"password\": \"admin\"}'  http://127.0.0.1:8080/api/engine/auth/logopass/register| jq"
+
   run:
     cmds:
       - go build cmd/server/main.go

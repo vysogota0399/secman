@@ -9,28 +9,15 @@ import (
 	"go.uber.org/zap"
 )
 
-type Post struct {
+type Crud struct {
 	core *secman.Core
 }
 
-func NewPost(core *secman.Core) *Post {
-	return &Post{core: core}
+func NewCrud(core *secman.Core) *Crud {
+	return &Crud{core: core}
 }
 
-func (h *Post) Handler() func(c *gin.Context) {
-	return func(c *gin.Context) {
-	}
-}
-
-type Get struct {
-	core *secman.Core
-}
-
-func NewGet(core *secman.Core) *Get {
-	return &Get{core: core}
-}
-
-func (h *Get) Handler() func(c *gin.Context) {
+func (h *Crud) Handler() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		path := c.Param("path")
 		backend, err := h.core.Router.Resolve(path)
@@ -47,32 +34,6 @@ func (h *Get) Handler() func(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusNotFound, gin.H{"error": "path not found for specified path and method"})
-	}
-}
-
-type Put struct {
-	core *secman.Core
-}
-
-func NewPut(core *secman.Core) *Put {
-	return &Put{core: core}
-}
-
-func (h *Put) Handler() func(c *gin.Context) {
-	return func(c *gin.Context) {
-	}
-}
-
-type Delete struct {
-	core *secman.Core
-}
-
-func NewDelete(core *secman.Core) *Delete {
-	return &Delete{core: core}
-}
-
-func (h *Delete) Handler() func(c *gin.Context) {
-	return func(c *gin.Context) {
 	}
 }
 

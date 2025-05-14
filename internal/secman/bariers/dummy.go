@@ -61,8 +61,6 @@ func (b *DummyBarrier) Update(ctx context.Context, path string, entry secman.Ent
 	return b.IStorage.Update(ctx, path, secman.PhysicalEntry{Value: value}, ttl)
 }
 
-var ErrNotFound = errors.New("not found")
-
 func (b *DummyBarrier) Get(ctx context.Context, path string) (secman.Entry, error) {
 	if b.isSealed() {
 		return secman.Entry{}, errors.New("barrier is sealed")
@@ -70,7 +68,7 @@ func (b *DummyBarrier) Get(ctx context.Context, path string) (secman.Entry, erro
 
 	res, err := b.IStorage.Get(ctx, path)
 	if err != nil {
-		return secman.Entry{}, fmt.Errorf("dummy barrier: key %s not found %w", path, ErrNotFound)
+		return secman.Entry{}, fmt.Errorf("dummy barrier: get key %s failed error: %w", path, err)
 	}
 
 	entry := secman.Entry{}
@@ -85,7 +83,7 @@ func (b *DummyBarrier) Get(ctx context.Context, path string) (secman.Entry, erro
 func (b *DummyBarrier) GetOk(ctx context.Context, path string) (secman.Entry, bool, error) {
 	entry, err := b.Get(ctx, path)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
+		if errors.Is(err, secman.ErrEntryNotFound) {
 			return secman.Entry{}, false, nil
 		}
 

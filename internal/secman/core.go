@@ -32,6 +32,8 @@ type IStorage interface {
 	Delete(ctx context.Context, path string) error
 }
 
+var ErrEntryNotFound = errors.New("entry not found")
+
 // IBarrier is an interface that defines the methods for a barrier. When the barrier is sealed, the storage is not accessible.
 // To unseal the barrier, the secret key is needed.
 // - Unseal is a method that unseals the barrier

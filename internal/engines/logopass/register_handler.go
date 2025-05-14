@@ -20,7 +20,7 @@ func (b *Backend) registerHandler(ctx *gin.Context) (*secman.LogicalResponse, er
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		return &secman.LogicalResponse{
 			Status:  http.StatusBadRequest,
-			Message: "invalid request, expected login and password",
+			Message: gin.H{"error": "invalid request, expected login and password"},
 		}, nil
 	}
 
@@ -30,20 +30,20 @@ func (b *Backend) registerHandler(ctx *gin.Context) (*secman.LogicalResponse, er
 	}
 
 	if err := b.engine.logopass.Register(ctx, user); err != nil {
-		b.engine.lg.ErrorCtx(ctx, "registration_handler: registration failed", zap.Error(err))
-
 		if errors.Is(err, ErrUserAlreadyExists) {
 			return &secman.LogicalResponse{
 				Status:  http.StatusBadRequest,
-				Message: "user with this login already exists",
+				Message: gin.H{"error": "user with this login already exists"},
 			}, nil
 		}
+
+		b.engine.lg.ErrorCtx(ctx, "registration_handler: registration failed", zap.Error(err))
 
 		return nil, err
 	}
 
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
-		Message: "registration successful",
+		Message: gin.H{},
 	}, nil
 }

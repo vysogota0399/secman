@@ -102,10 +102,14 @@ func NewRouter(
 			r.AbortIfNotInitialized,
 			r.AbortIfSealed,
 		)
+
 		r1.POST("/sys/enable/:engine", NewEnable(core).Handler())
-		r1.DELETE(":path", NewDelete(core).Handler())
-		r1.PUT(":path", NewPut(core).Handler())
-		r1.GET("/engine/*path", NewGet(core).Handler())
+
+		crud := NewCrud(core)
+		r1.DELETE("/engine/*path", crud.Handler())
+		r1.PUT("/engine/*path", crud.Handler())
+		r1.POST("/engine/*path", crud.Handler())
+		r1.GET("/engine/*path", crud.Handler())
 	}
 
 	return r

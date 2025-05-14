@@ -5,21 +5,19 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	UUID      string    `json:"uuid"`
 	Login     string    `json:"login"`
 	Password  string    `json:"password"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 func (u User) Empty() bool {
-	return u.UUID == "" && u.Login == "" && u.Password == "" && u.CreatedAt.IsZero()
+	return u.Login == "" && u.Password == "" && u.CreatedAt.IsZero()
 }
 
 func (u *User) HashPwd() error {
@@ -42,8 +40,8 @@ func NewUsers(lg *logging.ZapLogger, b secman.IBarrier) *Users {
 	return &Users{lg: lg, b: b}
 }
 
-func (u *Users) Get(ctx context.Context, uuid string) (User, error) {
-	data, err := u.b.Get(ctx, "sys/users/"+uuid)
+func (u *Users) Get(ctx context.Context, login string) (User, error) {
+	data, err := u.b.Get(ctx, "sys/users/"+login)
 	if err != nil {
 		return User{}, err
 	}
@@ -56,10 +54,27 @@ func (u *Users) Get(ctx context.Context, uuid string) (User, error) {
 	return user, nil
 }
 
-func (u *Users) Create(ctx context.Context, user *User) error {
-	user.UUID = uuid.New().String()
+func (u *Users) GetOk(ctx context.Context, login string) (User, bool, error) {
+	data, ok, err := u.b.GetOk(ctx, "sys/users/"+login)
+	if err != nil {
+		return User{}, false, err
+	}
+
+	if !ok {
+		return User{}, false, nil
+	}
+
+	var user User
+	if err := json.Unmarshal([]byte(data.Value), &user); err != nil {
+		return User{}, false, err
+	}
+
+	return user, ok, nil
+}
+
+func (u *Users) Update(ctx context.Context, user *User) error {
 	user.CreatedAt = time.Now()
-	key := "sys/users/" + user.UUID
+	key := "sys/users/" + user.Login
 
 	userJSON, err := json.Marshal(user)
 	if err != nil {
