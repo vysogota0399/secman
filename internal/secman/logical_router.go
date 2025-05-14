@@ -107,3 +107,22 @@ func (r *LogicalRouter) Delete(path string) {
 
 	r.engines.Delete(path)
 }
+
+func (r *LogicalRouter) EnabledEngines() ([]Backend, error) {
+	r.mtx.RLock()
+	defer r.mtx.RUnlock()
+
+	engines := r.engines.ToMap()
+	enabledEngines := make([]Backend, 0, len(engines))
+
+	for _, engine := range engines {
+		be, ok := engine.(Backend)
+		if !ok {
+			return nil, fmt.Errorf("type cast to backend failed for engine %T", engine)
+		}
+
+		enabledEngines = append(enabledEngines, be)
+	}
+
+	return enabledEngines, nil
+}

@@ -18,6 +18,7 @@ type Backend interface {
 	Help() string
 	Paths() []*Path
 	Enable(ctx context.Context, req *LogicalRequest) (*LogicalResponse, error)
+	Mount(ctx context.Context) error
 }
 
 // Field is a field of a path,

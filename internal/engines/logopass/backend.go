@@ -192,6 +192,31 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 	}, nil
 }
 
+// Mount mounts the logopass engine. Its check if the engine is enabled, then loads itself params to memory.
+func (b *Backend) Mount(ctx context.Context) error {
+	b.beMtx.Lock()
+	defer b.beMtx.Unlock()
+
+	ok, err := b.engine.paramsRep.IsExist(ctx)
+	if err != nil {
+		return fmt.Errorf("logopass: check engine enabled failed error: %w", err)
+	}
+
+	if !ok {
+		return fmt.Errorf("logopass: engine is not enabled")
+	}
+
+	params, err := b.engine.paramsRep.Get(ctx)
+	if err != nil {
+		return fmt.Errorf("logopass: get params failed error: %w", err)
+	}
+
+	b.params = params
+	b.exist.Store(true)
+
+	return nil
+}
+
 func generateSecretKey() string {
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	key := make([]byte, 32)
