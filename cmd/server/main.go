@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 
 	"github.com/vysogota0399/secman/internal/engines/logopass"
 	"github.com/vysogota0399/secman/internal/logging"
@@ -9,6 +10,8 @@ import (
 	"github.com/vysogota0399/secman/internal/secman/bariers"
 	"github.com/vysogota0399/secman/internal/secman/config"
 	"github.com/vysogota0399/secman/internal/secman/http"
+	"github.com/vysogota0399/secman/internal/secman/iam"
+	iam_repositories "github.com/vysogota0399/secman/internal/secman/iam/repositories"
 	"github.com/vysogota0399/secman/internal/secman/storages"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -28,20 +31,26 @@ func CreateApp() fx.Option {
 	return fx.Options(
 		fx.Provide(
 			config.NewConfig,
+			AsEngines(logopass.NewEngine),
+			fx.Annotate(logopass.NewLogopass, fx.As(new(logopass.IamAdapter))),
+
+			fx.Annotate(iam.NewCore, fx.As(new(logopass.Iam))),
+			fx.Annotate(iam_repositories.NewSessions, fx.As(new(iam.SessionsRepository))),
+			fx.Annotate(iam_repositories.NewUsers, fx.As(new(iam.UsersRepository))),
+
 			fx.Annotate(config.NewConfig, fx.As(new(logging.LogLevelFetcher))),
 
 			logging.MustZapLogger,
-			secman.NewCore,
+			secman.NewEnginesMap,
+			secman.NewCoreRepository,
+			fx.Annotate(secman.NewCore, fx.ParamTags(`group:"engines"`)),
+
 			http.NewRouter,
 			http.NewServer,
-
-			// fx.Annotate(repositories.NewSessions, fx.As(new(auth.SessionsRepository))),
-			// fx.Annotate(repositories.NewUsers, fx.As(new(auth.UsersRepository))),
+			http.NewInit,
 
 			fx.Annotate(storages.NewStorage, fx.As(new(secman.IStorage))),
 			fx.Annotate(bariers.NewDummyBarrier, fx.As(new(secman.IBarrier))),
-
-			AsEngines(logopass.NewEngine),
 		),
 		fx.Invoke(
 			info,
@@ -55,6 +64,7 @@ func info(lg *logging.ZapLogger) {
 		zap.String("version", BuildVersion),
 		zap.String("date", BuildDate),
 		zap.String("commit", BuildCommit),
+		zap.Int("pid", os.Getpid()),
 	)
 }
 

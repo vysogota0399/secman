@@ -1,0 +1,29 @@
+version: '3'
+
+tasks:
+  status:
+    cmd: curl http://127.0.0.1:8080/api/sys/status
+
+  init:
+    cmd: curl http://127.0.0.1:8080/api/sys/init
+
+  unseal:
+    env:
+      TOKEN: "asd"
+    cmd: "curl -v -X POST -d '{\"key\": \"${TOKEN}\"}'  http://127.0.0.1:8080/api/sys/unseal | jq"
+
+  enable-*:
+    vars:
+      ENGINE: '{{index .MATCH 0}}'
+    cmds:
+      - "curl -v -X POST http://127.0.0.1:8080/api/sys/enable/{{.ENGINE}} -d '{}' | jq"
+
+  auth-params:
+    cmds:
+      - "curl -v http://127.0.0.1:8080/api/engine/auth/logopass/params | jq"
+
+  run:
+    cmds:
+      - go build cmd/server/main.go
+      - mv main secman
+      - ./secman

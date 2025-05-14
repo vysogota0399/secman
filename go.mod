@@ -3,6 +3,7 @@ module github.com/vysogota0399/secman
 go 1.24.1
 
 require (
+	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/caarlos0/env v3.5.0+incompatible // indirect

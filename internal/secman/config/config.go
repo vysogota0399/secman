@@ -9,9 +9,8 @@ import (
 
 type Config struct {
 	FileStoragePath string         `env:"FILE_STORAGE_PATH"`
-	LogLevel        int            `env:"LOG_LEVEL" envDefault:"0" yml:"log_level"`
+	LogLevel        int            `yml:"log_level" env:"LOG_LEVEL"`
 	Server          Server         `yml:"server"`
-	Auth            map[string]any `yml:"auth"`
 	Storage         map[string]any `yml:"storage"`
 }
 
@@ -20,9 +19,7 @@ type Server struct {
 }
 
 func NewConfig() (*Config, error) {
-	cfg := &Config{
-		LogLevel: -1,
-	}
+	cfg := &Config{}
 
 	if path, ok := os.LookupEnv("FILE_STORAGE_PATH"); ok {
 		cfg.FileStoragePath = path
@@ -38,6 +35,7 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
+	cfg.LogLevel = -1
 	return cfg, nil
 }
 

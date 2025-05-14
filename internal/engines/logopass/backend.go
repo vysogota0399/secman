@@ -2,73 +2,93 @@ package logopass
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"math/rand"
 	"net/http"
+	"sync"
+	"sync/atomic"
+	"time"
 
+	"github.com/vysogota0399/secman/internal/engines/logopass/repositories"
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
-	"github.com/vysogota0399/secman/internal/secman/config"
-	"github.com/vysogota0399/secman/internal/secman/repositories"
+	iam_repositories "github.com/vysogota0399/secman/internal/secman/iam/repositories"
+	"go.uber.org/zap"
 )
 
 var (
 	PATH = "/auth/logopass"
 )
 
-type SessionsRepository interface {
-	Create(ctx context.Context, session *repositories.Session) error
-	Get(ctx context.Context, sessionID string) (repositories.Session, error)
+type ParamsRepository interface {
+	IsExist(ctx context.Context) (bool, error)
+	Get(ctx context.Context) (*repositories.Params, error)
+	Update(ctx context.Context, params *repositories.Params) error
 }
 
-type UsersRepository interface {
-	Get(ctx context.Context, userID string) (repositories.User, error)
+type IamAdapter interface {
+	Login(ctx context.Context, path string, backend *Backend) (string, error)
+	Authorize(ctx context.Context, token string, backend *Backend) error
+	Register(ctx context.Context, user iam_repositories.User) error
 }
 
-var _ SessionsRepository = &repositories.Sessions{}
-var _ UsersRepository = &repositories.Users{}
-var _ secman.Backend = &Backend{}
+var (
+	_ ParamsRepository = &repositories.ParamsRepository{}
+	_ secman.Backend   = &Backend{}
+	_ secman.Engine    = &Engine{}
+	_ IamAdapter       = &Logopass{}
+)
 
 type Engine struct {
-	lg       *logging.ZapLogger
-	sessRep  SessionsRepository
-	usersRep UsersRepository
+	lg        *logging.ZapLogger
+	paramsRep ParamsRepository
+	logopass  IamAdapter
 }
 
 func NewEngine(
 	lg *logging.ZapLogger,
-	sessRep SessionsRepository,
-	usersRep UsersRepository,
+	b secman.IBarrier,
+	logopass IamAdapter,
 ) *Engine {
-	return &Engine{lg: lg, sessRep: sessRep, usersRep: usersRep}
+	paramsRep := repositories.NewParamsRepository(lg, b, PATH)
+	return &Engine{
+		lg:        lg,
+		paramsRep: paramsRep,
+		logopass:  logopass,
+	}
 }
 
 func (e *Engine) Factory(core *secman.Core) secman.Backend {
-	return &Backend{core: core, engine: e}
+	exist := &atomic.Bool{}
+	exist.Store(false)
+
+	return &Backend{
+		core:   core,
+		engine: e,
+		beMtx:  sync.RWMutex{},
+		exist:  exist,
+	}
 }
 
-func Factory(
-	core *secman.Core,
-) *Backend {
-	return &Backend{
-		core: core,
-	}
+func (e *Engine) Name() string {
+	return "logopass"
 }
 
 type Backend struct {
 	core   *secman.Core
 	engine *Engine
+	beMtx  sync.RWMutex
+	exist  *atomic.Bool
+	params *repositories.Params
 }
 
 func (b *Backend) RootPath() string {
-	return "auth/logopass"
+	return PATH
 }
 
 func (b *Backend) Help() string {
 	return "Logopass authentication backend, uses login and password to authenticate"
-}
-
-func (b *Backend) Enable() error {
-	return nil
 }
 
 func (b *Backend) Paths() []*secman.Path {
@@ -92,16 +112,9 @@ func (b *Backend) Paths() []*secman.Path {
 			},
 		},
 		{
-			Path:        PATH + "/logout",
-			Method:      http.MethodDelete,
-			Handler:     nil,
-			Description: "Logout from the system",
-			Fields:      []secman.Field{},
-		},
-		{
 			Path:        PATH + "/register",
 			Method:      http.MethodPost,
-			Handler:     nil,
+			Handler:     b.registerHandler,
 			Description: "Register a new user",
 			Fields: []secman.Field{
 				{
@@ -116,35 +129,74 @@ func (b *Backend) Paths() []*secman.Path {
 				},
 			},
 		},
+		{
+			Path:        PATH + "/params",
+			Method:      http.MethodGet,
+			Handler:     b.getParamsHandler,
+			Description: "Get the params",
+		},
+		{
+			Path:        PATH + "/params",
+			Method:      http.MethodPut,
+			Handler:     nil,
+			Description: "Set the params",
+			Fields: []secman.Field{
+				{
+					Name:        "token_ttl",
+					Description: "Token TTL",
+				},
+				{
+					Name:        "secret_key",
+					Description: "Secret Key",
+				},
+			},
+		},
 	}
 }
 
-func NewAuth(
-	config *config.Config,
-	lg *logging.ZapLogger,
-	sessRep SessionsRepository,
-	usersRep UsersRepository,
-) (*JWT, error) {
-	cfg := config.Auth
-	authType, ok := cfg["type"].(string)
-	if !ok {
-		return nil, fmt.Errorf("initialize auth failed: type cast error for auth type - got %T expected string", cfg["type"])
+func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secman.LogicalResponse, error) {
+	b.beMtx.Lock()
+	defer b.beMtx.Unlock()
+
+	if b.exist.Load() {
+		return &secman.LogicalResponse{
+			Status:  http.StatusNotModified,
+			Message: "logopass: already enabled",
+		}, nil
 	}
 
-	switch authType {
-	case "jwt":
-		jwtCfg, err := NewJWTConfig(cfg)
-		if err != nil {
-			return nil, fmt.Errorf("initialize jwt auth failed: %w", err)
-		}
+	params := &repositories.Params{}
+	b.params = params
 
-		return NewJWT(
-			jwtCfg,
-			sessRep,
-			usersRep,
-			lg,
-		), nil
-	default:
-		return nil, fmt.Errorf("auth type %s not found", authType)
+	if err := req.ShouldBindJSON(params); err != nil {
+		b.engine.lg.DebugCtx(ctx, "logopass: enable failed error when binding json", zap.Error(err))
+		return &secman.LogicalResponse{
+			Status:  http.StatusBadRequest,
+			Message: "body is invalid or empty",
+		}, nil
 	}
+
+	if params.SecretKey == "" {
+		params.SecretKey = generateSecretKey()
+	}
+
+	if err := b.engine.paramsRep.Update(ctx, params); err != nil {
+		return nil, fmt.Errorf("logopass: enable failed error when updating params %w", err)
+	}
+
+	b.exist.Store(true)
+
+	return &secman.LogicalResponse{
+		Status:  http.StatusOK,
+		Message: "logopass enabled",
+	}, nil
+}
+
+func generateSecretKey() string {
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	key := make([]byte, 32)
+
+	_, _ = rnd.Read(key)
+
+	return base64.StdEncoding.EncodeToString(key)
 }

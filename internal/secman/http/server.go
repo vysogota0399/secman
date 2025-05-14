@@ -78,7 +78,10 @@ type Router struct {
 	core   *secman.Core
 }
 
-func NewRouter(core *secman.Core) *Router {
+func NewRouter(
+	core *secman.Core,
+	initEnineHandler *Init,
+) *Router {
 	r := &Router{router: gin.New(), core: core}
 	api := r.router.Group("/api")
 	api.Use(
@@ -88,13 +91,21 @@ func NewRouter(core *secman.Core) *Router {
 
 	{
 		sealed := api.Group("/")
+		sealed.POST("/sys/init", initEnineHandler.Handler())
 		sealed.POST("/sys/unseal", NewUnseal(core).Handler())
 		sealed.GET("/sys/status", NewStatus(core).Handler())
 	}
 
 	{
 		r1 := api.Group("/")
-		r1.Use(r.AbortIfSealed)
+		r1.Use(
+			r.AbortIfNotInitialized,
+			r.AbortIfSealed,
+		)
+		r1.POST("/sys/enable/:engine", NewEnable(core).Handler())
+		r1.DELETE(":path", NewDelete(core).Handler())
+		r1.PUT(":path", NewPut(core).Handler())
+		r1.GET("/engine/*path", NewGet(core).Handler())
 	}
 
 	return r
@@ -102,9 +113,15 @@ func NewRouter(core *secman.Core) *Router {
 
 func (r *Router) AbortIfSealed(c *gin.Context) {
 	if r.core.IsSealed() {
-		c.AbortWithStatus(http.StatusServiceUnavailable)
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "server is sealed"})
 		return
 	}
 
 	c.Next()
+}
+
+func (r *Router) AbortIfNotInitialized(c *gin.Context) {
+	if !r.core.IsInitialized() {
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "server is not initialized"})
+	}
 }

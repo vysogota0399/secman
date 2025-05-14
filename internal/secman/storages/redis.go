@@ -3,6 +3,7 @@ package storages
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/vysogota0399/secman/internal/logging"
@@ -56,12 +57,22 @@ func newRedisStorage(lg *logging.ZapLogger, config RedisConfig) *RedisStorage {
 	}
 }
 
-func (s *RedisStorage) Get(ctx context.Context, path string) (secman.Entry, error) {
-	return secman.Entry{}, nil
+func (s *RedisStorage) Get(ctx context.Context, path string) (secman.PhysicalEntry, error) {
+	record := s.rdb.Get(ctx, path)
+	if record.Err() == redis.Nil {
+		return secman.PhysicalEntry{}, nil
+	}
+
+	res, err := record.Bytes()
+	if err != nil {
+		return secman.PhysicalEntry{}, fmt.Errorf("storage: failed to get entry with key %s: %w", path, err)
+	}
+
+	return secman.PhysicalEntry{Value: res}, nil
 }
 
-func (s *RedisStorage) Update(ctx context.Context, path string, value secman.Entry) error {
-	return nil
+func (s *RedisStorage) Update(ctx context.Context, path string, entry secman.PhysicalEntry, ttl time.Duration) error {
+	return s.rdb.Set(ctx, path, entry.Value, ttl).Err()
 }
 
 func (s *RedisStorage) Delete(ctx context.Context, path string) error {
