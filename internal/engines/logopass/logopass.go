@@ -11,7 +11,14 @@ import (
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman/iam"
 	"github.com/vysogota0399/secman/internal/secman/iam/repositories"
+	iam_repositories "github.com/vysogota0399/secman/internal/secman/iam/repositories"
 )
+
+type IamAdapter interface {
+	Login(ctx context.Context, session iam_repositories.Session) error
+	Authorize(ctx context.Context, token string) (repositories.Session, error)
+	Register(ctx context.Context, user iam_repositories.User) error
+}
 
 type Logopass struct {
 	iam IamAdapter

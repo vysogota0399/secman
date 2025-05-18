@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/vysogota0399/secman/internal/secman"
+	"go.uber.org/zap"
 )
 
 type Unseal struct {
@@ -21,11 +22,6 @@ type UnsealRequest struct {
 
 func (h *Unseal) Handler() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		if !h.core.IsInitialized.Load() {
-			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "server is not initialized"})
-			return
-		}
-
 		if !h.core.IsSealed.Load() {
 			c.AbortWithStatus(http.StatusNotModified)
 			return
@@ -38,7 +34,8 @@ func (h *Unseal) Handler() func(c *gin.Context) {
 		}
 
 		if err := h.core.Unseal(c, []byte(req.Key)); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			h.core.Log.ErrorCtx(c, "unseal failed", zap.Error(err))
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "unseal failed, see logs for more details"})
 			return
 		}
 

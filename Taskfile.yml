@@ -1,5 +1,8 @@
 version: '3'
 
+env:
+  ROOT_TOKEN: "I5gVSOrW5Fb4G+2iRMcFkj3+cSuWrBB+foUcXZzGhkI="
+
 tasks:
   status:
     cmd: curl http://127.0.0.1:8080/api/sys/status
@@ -8,23 +11,31 @@ tasks:
     cmd: curl -v -X POST http://127.0.0.1:8080/api/sys/init
 
   unseal:
-    env:
-      TOKEN: "asd"
-    cmd: "curl -v -X POST -d '{\"key\": \"${TOKEN}\"}'  http://127.0.0.1:8080/api/sys/unseal | jq"
+    cmd: 'curl -v -X POST -d "{\"key\": \"$ROOT_TOKEN\"}" -H "X-Secman-Token: $ROOT_TOKEN" http://127.0.0.1:8080/api/sys/unseal | jq'
 
   enable-*:
     vars:
       ENGINE: '{{index .MATCH 0}}'
     cmds:
-      - "curl -v -X POST http://127.0.0.1:8080/api/sys/enable/{{.ENGINE}} -d '{}' | jq"
+      - 'curl -v -X POST -H "X-Secman-Token: $ROOT_TOKEN" http://127.0.0.1:8080/api/sys/enable/{{.ENGINE}} -d "{}" | jq'
 
   auth-params:
     cmds:
-      - "curl -v http://127.0.0.1:8080/api/engine/auth/logopass/params | jq"
+      - "curl -v http://127.0.0.1:8080/api/engine/auth/logopass | jq"
 
   register:
     cmds:
       - "curl -v -X POST -d '{\"login\": \"admin\", \"password\": \"admin\"}'  http://127.0.0.1:8080/api/engine/auth/logopass/register| jq"
+
+  enable_auth-*:
+    vars:
+      ENGINE: '{{index .MATCH 0}}'
+    cmds:
+      - 'curl -v -X POST -H "X-Secman-Token: $ROOT_TOKEN" http://127.0.0.1:8080/api/sys/auth/enable -d "{\"engine_path\": \"{{.ENGINE}}\"}" | jq'
+
+  login:
+    cmds:
+      - "curl -v -X POST -d '{\"login\": \"admin\", \"password\": \"admin\"}'  http://127.0.0.1:8080/api/engine/auth/logopass/login| jq"
 
   run:
     cmds:

@@ -12,8 +12,8 @@ import (
 	"github.com/vysogota0399/secman/internal/secman/http"
 	"github.com/vysogota0399/secman/internal/secman/iam"
 	iam_repositories "github.com/vysogota0399/secman/internal/secman/iam/repositories"
-	"github.com/vysogota0399/secman/internal/secman/services"
 	"github.com/vysogota0399/secman/internal/secman/storages"
+	"github.com/vysogota0399/secman/internal/secman/tokens"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -36,16 +36,19 @@ func CreateApp() fx.Option {
 			fx.Annotate(config.NewConfig, fx.As(new(logging.LogLevelFetcher))),
 
 			// engines
-			AsEngines(logopass.NewEngine),
+			AsBackend(logopass.NewBackend),
+			logopass.NewLogopass,
 
 			// iam
 			fx.Annotate(iam_repositories.NewSessions, fx.As(new(iam.SessionsRepository))),
 			fx.Annotate(iam_repositories.NewUsers, fx.As(new(iam.UsersRepository))),
 			fx.Annotate(iam.NewCore,
 				fx.As(new(logopass.IamAdapter)),
-				fx.As(new(http.Authorizer)),
-				fx.As(new(services.IamAdapter)),
 			),
+
+			// tokens
+			tokens.NewTokensRepository,
+			fx.Annotate(tokens.NewRootToken, fx.As(new(secman.IRootTokens))),
 
 			// core
 			fx.Annotate(secman.NewCore),
@@ -53,14 +56,15 @@ func CreateApp() fx.Option {
 			fx.Annotate(storages.NewStorage,
 				fx.As(new(secman.IStorage)),
 			),
+			fx.Annotate(secman.NewLogicalRouter, fx.ParamTags(`group:"backends"`)),
 			fx.Annotate(bariers.NewDummyBarrier, fx.As(new(secman.IBarrier))),
-
-			// services
+			secman.NewAuth,
 
 			// http
 			http.NewRouter,
 			http.NewServer,
-			fx.Annotate(http.NewInit, fx.ParamTags(`group:"engines"`)),
+			http.NewInit,
+			fx.Annotate(http.NewUnseal),
 		),
 		fx.Invoke(
 			info,
@@ -80,9 +84,9 @@ func info(lg *logging.ZapLogger) {
 
 func runServer(server *http.Server) {}
 
-func AsEngines(f any, ants ...fx.Annotation) any {
-	ants = append(ants, fx.ResultTags(`group:"engines"`))
-	ants = append(ants, fx.As(new(secman.LogicalEngine)))
+func AsBackend(f any, ants ...fx.Annotation) any {
+	ants = append(ants, fx.ResultTags(`group:"backends"`))
+	ants = append(ants, fx.As(new(secman.LogicalBackend)))
 
 	return fx.Annotate(
 		f,

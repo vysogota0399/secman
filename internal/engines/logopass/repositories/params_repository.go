@@ -23,7 +23,7 @@ type ParamsRepository struct {
 }
 
 func NewParamsRepository(lg *logging.ZapLogger, b secman.IBarrier, basePath string) *ParamsRepository {
-	return &ParamsRepository{lg: lg, b: b, path: strings.TrimPrefix(basePath, "/") + "/params"}
+	return &ParamsRepository{lg: lg, b: b, path: strings.TrimPrefix(basePath, "/")}
 }
 
 func (r *ParamsRepository) IsExist(ctx context.Context) (bool, error) {

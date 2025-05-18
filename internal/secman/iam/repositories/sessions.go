@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -30,6 +31,10 @@ func NewSessions(lg *logging.ZapLogger, b secman.IBarrier) *Sessions {
 func (s *Sessions) Get(ctx context.Context, sid string) (Session, error) {
 	data, err := s.b.Get(ctx, "sys/sessions/"+sid)
 	if err != nil {
+		if errors.Is(err, secman.ErrEntryNotFound) {
+			return Session{}, nil
+		}
+
 		return Session{}, err
 	}
 

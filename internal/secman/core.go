@@ -46,6 +46,11 @@ type IBarrier interface {
 	Unseal(ctx context.Context, key []byte) error
 }
 
+type IRootTokens interface {
+	Gen(ctx context.Context, path string) (string, error)
+	Compare(ctx context.Context, path string, token string) error
+}
+
 type Core struct {
 	IsInitialized  *atomic.Bool
 	sealedMtx      sync.RWMutex
@@ -55,8 +60,9 @@ type Core struct {
 	LogicalStorage IBarrier
 	Parent         *Core
 	Config         *config.Config
+	RootTokens     IRootTokens
 	Router         *LogicalRouter
-	coreRepository *CoreRepository
+	Auth           *Auth
 }
 
 func NewCore(
@@ -66,6 +72,9 @@ func NewCore(
 	barrier IBarrier,
 	storage IStorage,
 	coreRepository *CoreRepository,
+	rootTokens IRootTokens,
+	router *LogicalRouter,
+	auth *Auth,
 ) *Core {
 	core := &Core{
 		Log:            log,
@@ -74,7 +83,9 @@ func NewCore(
 		IsInitialized:  &atomic.Bool{},
 		Config:         config,
 		LogicalStorage: barrier,
-		coreRepository: coreRepository,
+		RootTokens:     rootTokens,
+		Router:         router,
+		Auth:           auth,
 	}
 
 	lc.Append(
@@ -83,7 +94,7 @@ func NewCore(
 				log.InfoCtx(ctx, "starting core", zap.Any("config", core.Config))
 
 				{
-					initialized, err := core.coreRepository.IsCoreInitialized(context.Background())
+					initialized, err := coreRepository.IsCoreInitialized(context.Background())
 					if err != nil {
 						return err
 					}
@@ -102,7 +113,7 @@ func NewCore(
 	return core
 }
 
-func (c *Core) Init(enginesMap EnginesMap) error {
+func (c *Core) Init(coreRepository *CoreRepository) error {
 	c.initMtx.Lock()
 	defer c.initMtx.Unlock()
 
@@ -110,16 +121,7 @@ func (c *Core) Init(enginesMap EnginesMap) error {
 		return errors.New("core: already initialized")
 	}
 
-	{
-		r, err := NewLogicalRouter(c, enginesMap)
-		if err != nil {
-			return err
-		}
-
-		c.Router = r
-	}
-
-	if err := c.coreRepository.SetCoreInitialized(context.Background(), true); err != nil {
+	if err := coreRepository.SetCoreInitialized(context.Background(), true); err != nil {
 		return err
 	}
 
@@ -132,26 +134,19 @@ func (c *Core) Unseal(ctx context.Context, key []byte) error {
 	c.sealedMtx.Lock()
 	defer c.sealedMtx.Unlock()
 
-	// unseal physical storage
 	if err := c.LogicalStorage.Unseal(ctx, key); err != nil {
 		return err
 	}
 
 	// mount enabled engines
-	c.Log.DebugCtx(ctx, "mounting enabled engines")
-	enabledEngines, err := c.Router.EnabledEngines()
-	if err != nil {
+	if err := c.Router.PostUnsealEngines(ctx); err != nil {
 		return fmt.Errorf("core: unseal failed when mounting enabled engines: %w", err)
 	}
 
-	for _, engine := range enabledEngines {
-		c.Log.DebugCtx(ctx, "mounting engine", zap.String("engine", engine.RootPath()))
-		if err := engine.PostUnseal(ctx); err != nil {
-			return fmt.Errorf("core: unseal failed when mounting enabled engine %s: %w", engine.RootPath(), err)
-		}
-		c.Log.DebugCtx(ctx, "mounting engine finished", zap.String("engine", engine.RootPath()))
+	// mount auth engines
+	if err := c.Auth.PostUnseal(ctx, c.Router); err != nil {
+		return fmt.Errorf("core: unseal failed when mounting auth engines: %w", err)
 	}
-	c.Log.DebugCtx(ctx, "mounting enabled engines finished")
 
 	c.IsSealed.Store(false)
 

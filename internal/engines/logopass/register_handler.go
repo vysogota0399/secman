@@ -29,7 +29,7 @@ func (b *Backend) registerHandler(ctx *gin.Context) (*secman.LogicalResponse, er
 		Password: req.Password,
 	}
 
-	if err := b.engine.logopass.Register(ctx, user); err != nil {
+	if err := b.logopass.Register(ctx, user); err != nil {
 		if errors.Is(err, ErrUserAlreadyExists) {
 			return &secman.LogicalResponse{
 				Status:  http.StatusBadRequest,
@@ -37,7 +37,7 @@ func (b *Backend) registerHandler(ctx *gin.Context) (*secman.LogicalResponse, er
 			}, nil
 		}
 
-		b.engine.lg.ErrorCtx(ctx, "registration_handler: registration failed", zap.Error(err))
+		b.lg.ErrorCtx(ctx, "registration_handler: registration failed", zap.Error(err))
 
 		return nil, err
 	}

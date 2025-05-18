@@ -10,19 +10,19 @@ import (
 )
 
 type Init struct {
-	core    *secman.Core
-	log     *logging.ZapLogger
-	engines []secman.LogicalEngine
+	core           *secman.Core
+	log            *logging.ZapLogger
+	coreRepository *secman.CoreRepository
 }
 
 func NewInit(
-	engines []secman.LogicalEngine,
 	core *secman.Core,
+	coreRepository *secman.CoreRepository,
 ) *Init {
 	return &Init{
-		core:    core,
-		log:     core.Log,
-		engines: engines,
+		core:           core,
+		log:            core.Log,
+		coreRepository: coreRepository,
 	}
 }
 
@@ -30,29 +30,24 @@ func (h *Init) Handler() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		h.log.DebugCtx(c.Request.Context(), "init start")
 
-		// if h.core.IsInitialized() {
-		// 	c.JSON(http.StatusOK, gin.H{"message": "already initialized"})
-		// 	return
-		// }
-
-		em := make(map[string]secman.LogicalBackend)
-
-		if len(h.engines) == 0 {
-			h.log.ErrorCtx(c.Request.Context(), "engines map: no engines provided")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "engines map: no engines provided"})
+		if h.core.IsInitialized.Load() {
+			c.JSON(http.StatusOK, gin.H{"message": "already initialized"})
 			return
 		}
 
-		for _, engine := range h.engines {
-			em[engine.Name()] = engine.Factory()
-		}
-
-		if err := h.core.Init(em); err != nil {
+		if err := h.core.Init(h.coreRepository); err != nil {
 			h.log.ErrorCtx(c.Request.Context(), "init core failed", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "init core failed, see logs for more details"})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "initialized"})
+		rootToken, err := h.core.RootTokens.Gen(c.Request.Context(), secman.RootTokenPath)
+		if err != nil {
+			h.log.ErrorCtx(c.Request.Context(), "init root token failed", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "init root token failed, see logs for more details"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "initialized", "root_token": rootToken})
 	}
 }

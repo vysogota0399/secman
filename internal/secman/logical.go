@@ -2,21 +2,24 @@ package secman
 
 import (
 	"context"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Engine is a logical engine that can be used to create a backend
-type LogicalEngine interface {
-	Name() string
-	Factory() LogicalBackend
-}
+var (
+	ErrEngineAlreadyEnabled = errors.New("engine already enabled")
+	ErrEngineIsNotEnabled   = errors.New("engine is not enabled")
+)
 
-// Backend is a logical backend that can be used to create a path
+// Backend is engine for manage secrets or other operations
 type LogicalBackend interface {
 	RootPath() string
 	Help() string
-	Paths() []*Path
+	// Paths returns a map of paths for the backend.
+	// The key is the http method of the path.
+	// The value is the route of the path.
+	Paths() map[string]map[string]*Path
 	Enable(ctx context.Context, req *LogicalRequest) (*LogicalResponse, error)
 	PostUnseal(ctx context.Context) error
 }
@@ -33,16 +36,14 @@ type Field struct {
 
 // Path is a path of a backend
 // Description is the description of the path,
-// Path is the path of the path
-// Method is the method of the path
 // Handler is the handler of the path
 // Fields is the fields of the path
+// SkipAuth is a flag that indicates if the path should be skipped from authorization
 type Path struct {
 	Description string
-	Path        string
-	Method      string
 	Handler     func(ctx *gin.Context) (*LogicalResponse, error)
 	Fields      []Field
+	SkipAuth    bool
 }
 
 // LogicalResponse is a response of a logical engine

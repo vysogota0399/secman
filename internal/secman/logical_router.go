@@ -11,64 +11,44 @@ import (
 	"go.uber.org/zap"
 )
 
-// EnginesMap is a map of engines. Must be immutable, initialized once for core.
-type EnginesMap map[string]LogicalBackend
-
 type LogicalRouter struct {
-	enginesMap EnginesMap
-	engines    *radix.Tree
-	mtx        sync.RWMutex
-	lg         *logging.ZapLogger
-	core       *Core
+	engines *radix.Tree
+	mtx     sync.RWMutex
+	lg      *logging.ZapLogger
 }
 
-func NewLogicalRouter(core *Core, enginesMap EnginesMap) (*LogicalRouter, error) {
-	core.Log.InfoCtx(context.Background(), "initializing logical router start")
-	defer core.Log.InfoCtx(context.Background(), "initializing logical router finished")
+func NewLogicalRouter(engines []LogicalBackend, coreRepository *CoreRepository, lg *logging.ZapLogger) (*LogicalRouter, error) {
+	lg.InfoCtx(context.Background(), "initializing logical router start", zap.Int("engines_count", len(engines)))
+	defer lg.InfoCtx(context.Background(), "initializing logical router finished")
 
 	router := &LogicalRouter{
-		enginesMap: enginesMap,
-		engines:    radix.New(),
-		mtx:        sync.RWMutex{},
-		lg:         core.Log,
-		core:       core,
+		engines: radix.New(),
+		mtx:     sync.RWMutex{},
+		lg:      lg,
 	}
 
-	for name, engine := range enginesMap {
-		// each engine has params path in the storage
-		// if its not true, engine is not enabled
-		exist, err := core.coreRepository.IsEngineExist(context.Background(), engine.RootPath()+"/params")
-		if err != nil {
-			return nil, fmt.Errorf("router: preload engine %s error %w", name, err)
-		}
+	for _, engine := range engines {
 
-		if exist {
-			router.lg.DebugCtx(context.Background(), "preload engine", zap.String("name", name))
-			if _, err := router.Register(context.Background(), name); err != nil {
-				return nil, fmt.Errorf("router: register engine %s error: %w", name, err)
-			}
+		router.lg.DebugCtx(context.Background(), "preload engine", zap.String("path", engine.RootPath()))
+		if err := router.Register(context.Background(), engine); err != nil {
+			return nil, fmt.Errorf("router: register engine %s error: %w", engine.RootPath(), err)
 		}
 	}
 
 	return router, nil
 }
 
-func (r *LogicalRouter) Register(ctx context.Context, name string) (LogicalBackend, error) {
+func (r *LogicalRouter) Register(ctx context.Context, engine LogicalBackend) error {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
-	be, ok := r.enginesMap[name]
-	if !ok {
-		return nil, fmt.Errorf("router: engine %s: %w", name, ErrEngineNotFound)
+	if _, _, ok := r.engines.LongestPrefix(engine.RootPath()); ok {
+		return fmt.Errorf("router: engine %s: %w", engine.RootPath(), ErrEngineAlreadyRegistered)
 	}
 
-	if _, ok := r.engines.Get(be.RootPath()); ok {
-		return nil, fmt.Errorf("router: engine %s: %w", name, ErrEngineAlreadyRegistered)
-	}
+	r.engines.Insert(engine.RootPath(), engine)
 
-	r.engines.Insert(be.RootPath(), be)
-
-	return be, nil
+	return nil
 }
 
 var (
@@ -95,28 +75,27 @@ func (r *LogicalRouter) Resolve(path string) (LogicalBackend, error) {
 	return be, nil
 }
 
-func (r *LogicalRouter) Delete(path string) {
-	r.mtx.Lock()
-	defer r.mtx.Unlock()
-
-	r.engines.Delete(path)
-}
-
-func (r *LogicalRouter) EnabledEngines() ([]LogicalBackend, error) {
+func (r *LogicalRouter) PostUnsealEngines(ctx context.Context) error {
 	r.mtx.RLock()
 	defer r.mtx.RUnlock()
 
 	engines := r.engines.ToMap()
-	enabledEngines := make([]LogicalBackend, 0, len(engines))
 
 	for _, engine := range engines {
 		be, ok := engine.(LogicalBackend)
 		if !ok {
-			return nil, fmt.Errorf("type cast to backend failed for engine %T", engine)
+			return fmt.Errorf("router: type cast backend to engine failed %T", engine)
 		}
 
-		enabledEngines = append(enabledEngines, be)
+		if err := be.PostUnseal(ctx); err != nil {
+			if errors.Is(err, ErrEngineIsNotEnabled) {
+				r.lg.DebugCtx(ctx, "router: engine is not enabled, skip", zap.String("engine", be.RootPath()))
+				continue
+			}
+
+			return fmt.Errorf("router: post unseal engine %s error: %w", be.RootPath(), err)
+		}
 	}
 
-	return enabledEngines, nil
+	return nil
 }
