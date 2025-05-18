@@ -28,16 +28,15 @@ type ParamsRepository interface {
 }
 
 type IamAdapter interface {
-	Login(ctx context.Context, path string, backend *Backend) (string, error)
-	Authorize(ctx context.Context, token string, backend *Backend) error
+	Login(ctx context.Context, session iam_repositories.Session) error
+	Authorize(ctx context.Context, sid string) (iam_repositories.Session, error)
 	Register(ctx context.Context, user iam_repositories.User) error
 }
 
 var (
-	_ ParamsRepository = &repositories.ParamsRepository{}
-	_ secman.Backend   = &Backend{}
-	_ secman.Engine    = &Engine{}
-	_ IamAdapter       = &Logopass{}
+	_ ParamsRepository      = &repositories.ParamsRepository{}
+	_ secman.LogicalBackend = &Backend{}
+	_ secman.LogicalEngine  = &Engine{}
 )
 
 type Engine struct {
@@ -59,12 +58,11 @@ func NewEngine(
 	}
 }
 
-func (e *Engine) Factory(core *secman.Core) secman.Backend {
+func (e *Engine) Factory() secman.LogicalBackend {
 	exist := &atomic.Bool{}
 	exist.Store(false)
 
 	return &Backend{
-		core:   core,
 		engine: e,
 		beMtx:  sync.RWMutex{},
 		exist:  exist,
@@ -76,7 +74,6 @@ func (e *Engine) Name() string {
 }
 
 type Backend struct {
-	core   *secman.Core
 	engine *Engine
 	beMtx  sync.RWMutex
 	exist  *atomic.Bool
@@ -192,8 +189,8 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 	}, nil
 }
 
-// Mount mounts the logopass engine. Its check if the engine is enabled, then loads itself params to memory.
-func (b *Backend) Mount(ctx context.Context) error {
+// PostUnseal mounts the logopass engine. Its check if the engine is enabled, then loads itself params to memory.
+func (b *Backend) PostUnseal(ctx context.Context) error {
 	b.beMtx.Lock()
 	defer b.beMtx.Unlock()
 

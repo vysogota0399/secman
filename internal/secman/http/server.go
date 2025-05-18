@@ -11,6 +11,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
+	"github.com/vysogota0399/secman/internal/secman/iam"
+	iam_repo "github.com/vysogota0399/secman/internal/secman/iam/repositories"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -73,50 +75,60 @@ type Route struct {
 	HTMLTemplates []*template.Template
 }
 
+type Authorizer interface {
+	Authorize(ctx context.Context, token string) (iam_repo.Session, error)
+}
+
+var _ Authorizer = &iam.Core{}
+
 type Router struct {
 	router *gin.Engine
 	core   *secman.Core
+	auth   Authorizer
 }
 
 func NewRouter(
 	core *secman.Core,
-	initEnineHandler *Init,
+	initHandler *Init,
+	auth Authorizer,
 ) *Router {
-	r := &Router{router: gin.New(), core: core}
+	r := &Router{router: gin.New(), core: core, auth: auth}
 	api := r.router.Group("/api")
 	api.Use(
 		gin.Logger(),
 		gin.Recovery(),
 	)
 
-	{
-		sealed := api.Group("/")
-		sealed.POST("/sys/init", initEnineHandler.Handler())
-		sealed.POST("/sys/unseal", NewUnseal(core).Handler())
-		sealed.GET("/sys/status", NewStatus(core).Handler())
-	}
+	api.GET("/sys/status", NewStatus(core).Handler())
+	api.POST("/sys/init", initHandler.Handler())
+	api.POST("/sys/unseal", NewUnseal(core).Handler())
+
+	authorized := api.Group("/")
+	authorized.Use(
+		r.Authorize,
+	)
 
 	{
-		r1 := api.Group("/")
-		r1.Use(
+		unsealed := authorized.Group("/")
+		unsealed.Use(
 			r.AbortIfNotInitialized,
 			r.AbortIfSealed,
 		)
 
-		r1.POST("/sys/enable/:engine", NewEnable(core).Handler())
+		unsealed.POST("/sys/enable/:engine", NewEnable(core).Handler())
 
 		crud := NewCrud(core)
-		r1.DELETE("/engine/*path", crud.Handler())
-		r1.PUT("/engine/*path", crud.Handler())
-		r1.POST("/engine/*path", crud.Handler())
-		r1.GET("/engine/*path", crud.Handler())
+		unsealed.DELETE("/engine/*path", crud.Handler())
+		unsealed.PUT("/engine/*path", crud.Handler())
+		unsealed.POST("/engine/*path", crud.Handler())
+		unsealed.GET("/engine/*path", crud.Handler())
 	}
 
 	return r
 }
 
 func (r *Router) AbortIfSealed(c *gin.Context) {
-	if r.core.IsSealed() {
+	if r.core.IsSealed.Load() {
 		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "server is sealed"})
 		return
 	}
@@ -125,7 +137,24 @@ func (r *Router) AbortIfSealed(c *gin.Context) {
 }
 
 func (r *Router) AbortIfNotInitialized(c *gin.Context) {
-	if !r.core.IsInitialized() {
+	if !r.core.IsInitialized.Load() {
 		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "server is not initialized"})
 	}
+}
+
+func (r *Router) Authorize(c *gin.Context) {
+	token := c.GetHeader("X-Vault-Token")
+	if token != "" {
+		sess, err := r.auth.Authorize(c.Request.Context(), token)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			return
+		}
+
+		c.Set("session", sess)
+		c.Next()
+		return
+	}
+
+	c.AbortWithStatus(http.StatusUnauthorized)
 }

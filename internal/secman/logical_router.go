@@ -12,16 +12,7 @@ import (
 )
 
 // EnginesMap is a map of engines. Must be immutable, initialized once for core.
-type EnginesMap map[string]Backend
-
-func NewEnginesMap(core *Core, engines ...Engine) EnginesMap {
-	em := make(map[string]Backend)
-	for _, engine := range engines {
-		em[engine.Name()] = engine.Factory(core)
-	}
-
-	return em
-}
+type EnginesMap map[string]LogicalBackend
 
 type LogicalRouter struct {
 	enginesMap EnginesMap
@@ -31,7 +22,10 @@ type LogicalRouter struct {
 	core       *Core
 }
 
-func NewLogicalRouter(enginesMap EnginesMap, core *Core) (*LogicalRouter, error) {
+func NewLogicalRouter(core *Core, enginesMap EnginesMap) (*LogicalRouter, error) {
+	core.Log.InfoCtx(context.Background(), "initializing logical router start")
+	defer core.Log.InfoCtx(context.Background(), "initializing logical router finished")
+
 	router := &LogicalRouter{
 		enginesMap: enginesMap,
 		engines:    radix.New(),
@@ -59,7 +53,7 @@ func NewLogicalRouter(enginesMap EnginesMap, core *Core) (*LogicalRouter, error)
 	return router, nil
 }
 
-func (r *LogicalRouter) Register(ctx context.Context, name string) (Backend, error) {
+func (r *LogicalRouter) Register(ctx context.Context, name string) (LogicalBackend, error) {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
@@ -82,7 +76,7 @@ var (
 	ErrEngineAlreadyRegistered = errors.New("engine already registered")
 )
 
-func (r *LogicalRouter) Resolve(path string) (Backend, error) {
+func (r *LogicalRouter) Resolve(path string) (LogicalBackend, error) {
 	r.mtx.RLock()
 	defer r.mtx.RUnlock()
 
@@ -93,7 +87,7 @@ func (r *LogicalRouter) Resolve(path string) (Backend, error) {
 
 	r.lg.DebugCtx(context.Background(), "resolved engine", zap.String("engine", str))
 
-	be, ok := engine.(Backend)
+	be, ok := engine.(LogicalBackend)
 	if !ok {
 		return nil, fmt.Errorf("type cast to backend failed for engine %s %T", str, engine)
 	}
@@ -108,15 +102,15 @@ func (r *LogicalRouter) Delete(path string) {
 	r.engines.Delete(path)
 }
 
-func (r *LogicalRouter) EnabledEngines() ([]Backend, error) {
+func (r *LogicalRouter) EnabledEngines() ([]LogicalBackend, error) {
 	r.mtx.RLock()
 	defer r.mtx.RUnlock()
 
 	engines := r.engines.ToMap()
-	enabledEngines := make([]Backend, 0, len(engines))
+	enabledEngines := make([]LogicalBackend, 0, len(engines))
 
 	for _, engine := range engines {
-		be, ok := engine.(Backend)
+		be, ok := engine.(LogicalBackend)
 		if !ok {
 			return nil, fmt.Errorf("type cast to backend failed for engine %T", engine)
 		}

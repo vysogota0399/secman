@@ -18,7 +18,7 @@ func defaultSettings(level zap.AtomicLevel) *settings {
 			Initial:    100,
 			Thereafter: 100,
 		},
-		Encoding: "json",
+		Encoding: "console",
 		EncoderConfig: zapcore.EncoderConfig{
 			MessageKey:     "message",
 			LevelKey:       "level",

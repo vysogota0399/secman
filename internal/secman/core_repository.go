@@ -3,6 +3,7 @@ package secman
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/vysogota0399/secman/internal/logging"
@@ -19,11 +20,17 @@ func NewCoreRepository(storage IStorage, log *logging.ZapLogger) *CoreRepository
 	return &CoreRepository{storage: storage, log: log}
 }
 
+type CoreEntry struct {
+	Initialized    bool   `json:"initialized"`
+	AuthEngineName string `json:"auth_engine_name"`
+}
+
 type CoreParamsEntry struct {
-	Initialized bool `json:"initialized"`
+	AuthEngineName string `json:"auth_engine_name"`
 }
 
 func (r *CoreRepository) IsCoreInitialized(ctx context.Context) (bool, error) {
+	return false, nil
 	coreParams, err := r.entry(ctx)
 	if err != nil {
 		return false, err
@@ -46,15 +53,35 @@ func (r *CoreRepository) SetCoreInitialized(ctx context.Context, initialized boo
 	return nil
 }
 
-func (r *CoreRepository) entry(ctx context.Context) (CoreParamsEntry, error) {
+func (r *CoreRepository) GetAuthEngineName(ctx context.Context) (string, error) {
+	coreParams, err := r.paramsEntry(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return coreParams.AuthEngineName, nil
+}
+
+func (r *CoreRepository) entry(ctx context.Context) (CoreEntry, error) {
+	var coreParams CoreEntry
+	core, err := r.storage.Get(ctx, coreParamsPath)
+	if err != nil {
+		return CoreEntry{}, err
+	}
+
+	err = json.Unmarshal(core.Value, &coreParams)
+	if err != nil {
+		return CoreEntry{}, fmt.Errorf("core repository: failed to unmarshal core params %s: %w", string(core.Value), err)
+	}
+
+	return coreParams, nil
+}
+
+func (r *CoreRepository) paramsEntry(ctx context.Context) (CoreParamsEntry, error) {
 	var coreParams CoreParamsEntry
 	core, err := r.storage.Get(ctx, coreParamsPath)
 	if err != nil {
 		return CoreParamsEntry{}, err
-	}
-
-	if core.Value == nil {
-		return CoreParamsEntry{}, nil
 	}
 
 	err = json.Unmarshal(core.Value, &coreParams)
@@ -65,7 +92,16 @@ func (r *CoreRepository) entry(ctx context.Context) (CoreParamsEntry, error) {
 	return coreParams, nil
 }
 
-func (r *CoreRepository) updateEntry(ctx context.Context, entry CoreParamsEntry) error {
+func (r *CoreRepository) updateEntry(ctx context.Context, entry CoreEntry) error {
+	value, err := json.Marshal(entry)
+	if err != nil {
+		return fmt.Errorf("core repository: failed to marshal core params %s: %w", string(value), err)
+	}
+
+	return r.storage.Update(ctx, coreParamsPath, PhysicalEntry{Value: value}, 0)
+}
+
+func (r *CoreRepository) updateParamsEntry(ctx context.Context, entry CoreParamsEntry) error {
 	value, err := json.Marshal(entry)
 	if err != nil {
 		return fmt.Errorf("core repository: failed to marshal core params %s: %w", string(value), err)
@@ -77,10 +113,10 @@ func (r *CoreRepository) updateEntry(ctx context.Context, entry CoreParamsEntry)
 // IsEngineExist checks if the engine exists in the storage.
 // If engine stored in the storage, it means that the engine was enabled.
 func (r *CoreRepository) IsEngineExist(ctx context.Context, searchPath string) (bool, error) {
-	entry, err := r.storage.Get(ctx, searchPath)
-	if err != nil {
+	_, err := r.storage.Get(ctx, searchPath)
+	if err != nil && errors.Is(err, ErrEntryNotFound) {
 		return false, err
 	}
 
-	return entry.Value != nil, nil
+	return true, nil
 }

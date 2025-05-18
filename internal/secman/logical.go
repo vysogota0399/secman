@@ -7,18 +7,18 @@ import (
 )
 
 // Engine is a logical engine that can be used to create a backend
-type Engine interface {
+type LogicalEngine interface {
 	Name() string
-	Factory(core *Core) Backend
+	Factory() LogicalBackend
 }
 
 // Backend is a logical backend that can be used to create a path
-type Backend interface {
+type LogicalBackend interface {
 	RootPath() string
 	Help() string
 	Paths() []*Path
 	Enable(ctx context.Context, req *LogicalRequest) (*LogicalResponse, error)
-	Mount(ctx context.Context) error
+	PostUnseal(ctx context.Context) error
 }
 
 // Field is a field of a path,

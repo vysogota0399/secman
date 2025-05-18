@@ -10,22 +10,46 @@ import (
 )
 
 type Init struct {
-	core *secman.Core
-	log  *logging.ZapLogger
+	core    *secman.Core
+	log     *logging.ZapLogger
+	engines []secman.LogicalEngine
 }
 
-func NewInit(core *secman.Core, enginesMap secman.EnginesMap) *Init {
-	return &Init{core: core, log: core.Log}
+func NewInit(
+	engines []secman.LogicalEngine,
+	core *secman.Core,
+) *Init {
+	return &Init{
+		core:    core,
+		log:     core.Log,
+		engines: engines,
+	}
 }
 
 func (h *Init) Handler() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		h.log.DebugCtx(c.Request.Context(), "init start")
 
-		err := h.core.Init()
-		if err != nil {
-			h.log.ErrorCtx(c.Request.Context(), "init failed", zap.Error(err))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "init failed, see logs for more details"})
+		// if h.core.IsInitialized() {
+		// 	c.JSON(http.StatusOK, gin.H{"message": "already initialized"})
+		// 	return
+		// }
+
+		em := make(map[string]secman.LogicalBackend)
+
+		if len(h.engines) == 0 {
+			h.log.ErrorCtx(c.Request.Context(), "engines map: no engines provided")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "engines map: no engines provided"})
+			return
+		}
+
+		for _, engine := range h.engines {
+			em[engine.Name()] = engine.Factory()
+		}
+
+		if err := h.core.Init(em); err != nil {
+			h.log.ErrorCtx(c.Request.Context(), "init core failed", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "init core failed, see logs for more details"})
 			return
 		}
 

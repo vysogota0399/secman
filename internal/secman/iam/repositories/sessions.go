@@ -53,7 +53,13 @@ func (s *Sessions) Create(ctx context.Context, sess *Session) error {
 		Value: string(session),
 	}
 
-	ttl := time.Until(sess.ExpiredAt)
+	var ttl time.Duration
+	if sess.ExpiredAt.IsZero() {
+		ttl = 0
+	} else {
+		ttl = time.Until(sess.ExpiredAt)
+	}
+
 	if err := s.b.Update(ctx, "sys/sessions/"+sess.UUID, entry, ttl); err != nil {
 		return err
 	}

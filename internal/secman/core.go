@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/vysogota0399/secman/internal/logging"
@@ -46,9 +47,9 @@ type IBarrier interface {
 }
 
 type Core struct {
-	isSealed       bool
+	IsInitialized  *atomic.Bool
 	sealedMtx      sync.RWMutex
-	initialized    bool
+	IsSealed       *atomic.Bool
 	initMtx        sync.RWMutex
 	Log            *logging.ZapLogger
 	LogicalStorage IBarrier
@@ -59,83 +60,72 @@ type Core struct {
 }
 
 func NewCore(
-	engines []Engine,
 	lc fx.Lifecycle,
 	log *logging.ZapLogger,
 	config *config.Config,
 	barrier IBarrier,
 	storage IStorage,
 	coreRepository *CoreRepository,
-) (*Core, error) {
+) *Core {
 	core := &Core{
 		Log:            log,
 		sealedMtx:      sync.RWMutex{},
-		isSealed:       true,
+		IsSealed:       &atomic.Bool{},
+		IsInitialized:  &atomic.Bool{},
 		Config:         config,
 		LogicalStorage: barrier,
 		coreRepository: coreRepository,
-	}
-
-	{
-		initialized, err := core.coreRepository.IsCoreInitialized(context.Background())
-		if err != nil {
-			return nil, err
-		}
-
-		core.initialized = initialized
-	}
-	{
-		enginesMap := NewEnginesMap(core, engines...)
-		log.InfoCtx(context.Background(), "initializing engines")
-		r, err := NewLogicalRouter(enginesMap, core)
-		if err != nil {
-			return nil, err
-		}
-		log.InfoCtx(context.Background(), "initializing engines finished")
-		core.Router = r
 	}
 
 	lc.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				log.InfoCtx(ctx, "starting core", zap.Any("config", core.Config))
+
+				{
+					initialized, err := core.coreRepository.IsCoreInitialized(context.Background())
+					if err != nil {
+						return err
+					}
+
+					core.IsInitialized.Store(initialized)
+				}
+
+				core.IsSealed.Store(true)
+
+				log.InfoCtx(ctx, "core started")
 				return nil
 			},
 		},
 	)
 
-	return core, nil
+	return core
 }
 
-func (c *Core) Init() error {
+func (c *Core) Init(enginesMap EnginesMap) error {
 	c.initMtx.Lock()
 	defer c.initMtx.Unlock()
 
-	if c.initialized {
+	if c.IsInitialized.Load() {
 		return errors.New("core: already initialized")
+	}
+
+	{
+		r, err := NewLogicalRouter(c, enginesMap)
+		if err != nil {
+			return err
+		}
+
+		c.Router = r
 	}
 
 	if err := c.coreRepository.SetCoreInitialized(context.Background(), true); err != nil {
 		return err
 	}
 
-	c.initialized = true
+	c.IsInitialized.Store(true)
 
 	return nil
-}
-
-func (c *Core) IsInitialized() bool {
-	c.initMtx.RLock()
-	defer c.initMtx.RUnlock()
-
-	return c.initialized
-}
-
-func (c *Core) IsSealed() bool {
-	c.sealedMtx.RLock()
-	defer c.sealedMtx.RUnlock()
-
-	return c.isSealed
 }
 
 func (c *Core) Unseal(ctx context.Context, key []byte) error {
@@ -156,14 +146,14 @@ func (c *Core) Unseal(ctx context.Context, key []byte) error {
 
 	for _, engine := range enabledEngines {
 		c.Log.DebugCtx(ctx, "mounting engine", zap.String("engine", engine.RootPath()))
-		if err := engine.Mount(ctx); err != nil {
+		if err := engine.PostUnseal(ctx); err != nil {
 			return fmt.Errorf("core: unseal failed when mounting enabled engine %s: %w", engine.RootPath(), err)
 		}
 		c.Log.DebugCtx(ctx, "mounting engine finished", zap.String("engine", engine.RootPath()))
 	}
 	c.Log.DebugCtx(ctx, "mounting enabled engines finished")
 
-	c.isSealed = false
+	c.IsSealed.Store(false)
 
 	return nil
 }

@@ -5,7 +5,7 @@ tasks:
     cmd: curl http://127.0.0.1:8080/api/sys/status
 
   init:
-    cmd: curl http://127.0.0.1:8080/api/sys/init
+    cmd: curl -v -X POST http://127.0.0.1:8080/api/sys/init
 
   unseal:
     env:

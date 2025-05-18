@@ -18,8 +18,8 @@ func NewStatus(core *secman.Core) *Status {
 func (h *Status) Handler() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		status := map[string]any{
-			"sealed":      h.core.IsSealed(),
-			"initialized": h.core.IsInitialized(),
+			"sealed":      h.core.IsSealed.Load(),
+			"initialized": h.core.IsInitialized.Load(),
 		}
 
 		c.JSON(http.StatusOK, status)

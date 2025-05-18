@@ -12,6 +12,7 @@ import (
 	"github.com/vysogota0399/secman/internal/secman/http"
 	"github.com/vysogota0399/secman/internal/secman/iam"
 	iam_repositories "github.com/vysogota0399/secman/internal/secman/iam/repositories"
+	"github.com/vysogota0399/secman/internal/secman/services"
 	"github.com/vysogota0399/secman/internal/secman/storages"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -31,26 +32,35 @@ func CreateApp() fx.Option {
 	return fx.Options(
 		fx.Provide(
 			config.NewConfig,
-			AsEngines(logopass.NewEngine),
-			fx.Annotate(logopass.NewLogopass, fx.As(new(logopass.IamAdapter))),
-
-			fx.Annotate(iam.NewCore, fx.As(new(logopass.Iam))),
-			fx.Annotate(iam_repositories.NewSessions, fx.As(new(iam.SessionsRepository))),
-			fx.Annotate(iam_repositories.NewUsers, fx.As(new(iam.UsersRepository))),
-
+			logging.MustZapLogger,
 			fx.Annotate(config.NewConfig, fx.As(new(logging.LogLevelFetcher))),
 
-			logging.MustZapLogger,
-			secman.NewEnginesMap,
-			secman.NewCoreRepository,
-			fx.Annotate(secman.NewCore, fx.ParamTags(`group:"engines"`)),
+			// engines
+			AsEngines(logopass.NewEngine),
 
+			// iam
+			fx.Annotate(iam_repositories.NewSessions, fx.As(new(iam.SessionsRepository))),
+			fx.Annotate(iam_repositories.NewUsers, fx.As(new(iam.UsersRepository))),
+			fx.Annotate(iam.NewCore,
+				fx.As(new(logopass.IamAdapter)),
+				fx.As(new(http.Authorizer)),
+				fx.As(new(services.IamAdapter)),
+			),
+
+			// core
+			fx.Annotate(secman.NewCore),
+			secman.NewCoreRepository,
+			fx.Annotate(storages.NewStorage,
+				fx.As(new(secman.IStorage)),
+			),
+			fx.Annotate(bariers.NewDummyBarrier, fx.As(new(secman.IBarrier))),
+
+			// services
+
+			// http
 			http.NewRouter,
 			http.NewServer,
-			http.NewInit,
-
-			fx.Annotate(storages.NewStorage, fx.As(new(secman.IStorage))),
-			fx.Annotate(bariers.NewDummyBarrier, fx.As(new(secman.IBarrier))),
+			fx.Annotate(http.NewInit, fx.ParamTags(`group:"engines"`)),
 		),
 		fx.Invoke(
 			info,
@@ -72,7 +82,7 @@ func runServer(server *http.Server) {}
 
 func AsEngines(f any, ants ...fx.Annotation) any {
 	ants = append(ants, fx.ResultTags(`group:"engines"`))
-	ants = append(ants, fx.As(new(secman.Engine)))
+	ants = append(ants, fx.As(new(secman.LogicalEngine)))
 
 	return fx.Annotate(
 		f,

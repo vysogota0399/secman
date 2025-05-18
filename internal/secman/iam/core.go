@@ -9,7 +9,6 @@ import (
 
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman/iam/repositories"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type SessionsRepository interface {
@@ -41,19 +40,6 @@ type Core struct {
 
 func NewCore(lg *logging.ZapLogger, sessRep SessionsRepository, usersRep UsersRepository) *Core {
 	return &Core{lg: lg, sessRep: sessRep, usersRep: usersRep}
-}
-
-func (c *Core) Authenticate(ctx context.Context, login, password string) error {
-	foundUser, err := c.usersRep.Get(ctx, login)
-	if err != nil {
-		return fmt.Errorf("user %s not found %w", login, err)
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(password)); err != nil {
-		return fmt.Errorf("invalid password for user %s %w", login, err)
-	}
-
-	return nil
 }
 
 func (c *Core) Authorize(ctx context.Context, sid string) (repositories.Session, error) {

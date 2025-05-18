@@ -13,23 +13,12 @@ import (
 	"github.com/vysogota0399/secman/internal/secman/iam/repositories"
 )
 
-type Iam interface {
-	Authenticate(ctx context.Context, login, password string) error
-	Authorize(ctx context.Context, sid string) (repositories.Session, error)
-	Login(ctx context.Context, session repositories.Session) error
-	Register(ctx context.Context, user repositories.User) error
-}
-
-var (
-	_ Iam = &iam.Core{}
-)
-
 type Logopass struct {
-	iam Iam
+	iam IamAdapter
 	lg  *logging.ZapLogger
 }
 
-func NewLogopass(iam Iam, lg *logging.ZapLogger) *Logopass {
+func NewLogopass(iam IamAdapter, lg *logging.ZapLogger) *Logopass {
 	return &Logopass{
 		iam: iam,
 		lg:  lg,

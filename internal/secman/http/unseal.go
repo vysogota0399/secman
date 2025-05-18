@@ -21,7 +21,12 @@ type UnsealRequest struct {
 
 func (h *Unseal) Handler() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		if !h.core.IsSealed() {
+		if !h.core.IsInitialized.Load() {
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "server is not initialized"})
+			return
+		}
+
+		if !h.core.IsSealed.Load() {
 			c.AbortWithStatus(http.StatusNotModified)
 			return
 		}
