@@ -29,9 +29,9 @@ type LogicalBackend interface {
 // Description is the description of the field,
 // Required is a flag that indicates if the field is required
 type Field struct {
-	Name        string
-	Description string
-	Required    bool
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Required    bool   `json:"required"`
 }
 
 // Path is a path of a backend

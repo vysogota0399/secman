@@ -9,15 +9,18 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/vysogota0399/secman/internal/logging"
+	"github.com/vysogota0399/secman/internal/secman"
 	"github.com/vysogota0399/secman/internal/secman/iam"
 	"github.com/vysogota0399/secman/internal/secman/iam/repositories"
 	iam_repositories "github.com/vysogota0399/secman/internal/secman/iam/repositories"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type IamAdapter interface {
 	Login(ctx context.Context, session iam_repositories.Session) error
 	Authorize(ctx context.Context, token string) (repositories.Session, error)
 	Register(ctx context.Context, user iam_repositories.User) error
+	GetUser(ctx context.Context, login string) (repositories.User, error)
 }
 
 type Logopass struct {
@@ -33,13 +36,13 @@ func NewLogopass(iam IamAdapter, lg *logging.ZapLogger) *Logopass {
 }
 
 // Login creates a new session and returns the token
-func (lp Logopass) Login(ctx context.Context, path string, backend *Backend) (string, error) {
+func (lp Logopass) Login(ctx context.Context, user repositories.User, backend *Backend) (string, error) {
 	params := backend.getParams()
 
 	now := time.Now()
 	session := repositories.Session{
 		UUID:      uuid.New().String(),
-		Sub:       path,
+		Sub:       user.Path,
 		ExpiredAt: now.Add(params.TokenTTL),
 		CreatedAt: now,
 		Engine:    "logopass",
@@ -70,6 +73,23 @@ func (lp Logopass) Authorize(ctx context.Context, token string, backend *Backend
 	}
 
 	return nil
+}
+
+func (lp Logopass) Authenticate(ctx context.Context, login, password string) (repositories.User, error) {
+	user, err := lp.iam.GetUser(ctx, login)
+	if err != nil {
+		if errors.Is(err, secman.ErrEntryNotFound) {
+			return repositories.User{}, fmt.Errorf("logopass: user %s not found", login)
+		}
+
+		return repositories.User{}, fmt.Errorf("logopass: fetch user %s failed error %w", login, err)
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return repositories.User{}, fmt.Errorf("logopass: invalid password")
+	}
+
+	return user, nil
 }
 
 type Claims struct {

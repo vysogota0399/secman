@@ -70,3 +70,7 @@ func (c *Core) Register(ctx context.Context, user repositories.User) error {
 
 	return nil
 }
+
+func (c *Core) GetUser(ctx context.Context, login string) (repositories.User, error) {
+	return c.usersRep.Get(ctx, login)
+}

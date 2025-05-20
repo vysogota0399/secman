@@ -47,18 +47,20 @@ func (b *Backend) skipAuth(c *gin.Context) bool {
 		return false
 	}
 
-	originalPath := c.Request.URL.Path
-	idx := strings.Index(originalPath, b.RootPath())
-	if idx == -1 {
-		return false
-	}
-
-	logicalPath := originalPath[idx:]
-
-	path, ok := paths[logicalPath]
+	path, ok := paths[b.logicalPath(c)]
 	if !ok {
 		return false
 	}
 
 	return path.SkipAuth
+}
+
+func (b *Backend) logicalPath(c *gin.Context) string {
+	originalPath := c.Request.URL.Path
+	idx := strings.Index(originalPath, b.RootPath())
+	if idx == -1 {
+		return ""
+	}
+
+	return originalPath[idx:]
 }

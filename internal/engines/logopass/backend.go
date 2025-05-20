@@ -87,6 +87,7 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 				Required:    true,
 			},
 		},
+		Handler:  b.LoginHandler,
 		SkipAuth: true,
 	}
 

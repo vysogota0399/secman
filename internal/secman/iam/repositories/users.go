@@ -14,6 +14,7 @@ type User struct {
 	Login     string    `json:"login"`
 	Password  string    `json:"password"`
 	CreatedAt time.Time `json:"created_at"`
+	Path      string
 }
 
 func (u User) Empty() bool {
@@ -51,6 +52,7 @@ func (u *Users) Get(ctx context.Context, login string) (User, error) {
 		return User{}, err
 	}
 
+	user.Path = data.Path
 	return user, nil
 }
 
