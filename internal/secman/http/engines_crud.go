@@ -26,7 +26,7 @@ func (h *EnginesCrud) Handler() func(c *gin.Context) {
 			return
 		}
 
-		errMsg := gin.H{"error": "path not found for specified path and method"}
+		errMsg := gin.H{"error": "engine not found for specified path and method"}
 		paths, ok := backend.Paths()[c.Request.Method]
 		if !ok {
 			c.JSON(http.StatusNotFound, errMsg)

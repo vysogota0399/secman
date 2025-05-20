@@ -64,6 +64,10 @@ func (c *Core) Register(ctx context.Context, user repositories.User) error {
 		return fmt.Errorf("iam/core registrate user %s failed, user already exists: %w", user.Login, ErrUserAlreadyExists)
 	}
 
+	if err := user.HashPwd(); err != nil {
+		return fmt.Errorf("iam/core registrate user %s failed error: %w", user.Login, err)
+	}
+
 	if createErr := c.usersRep.Update(ctx, &user); createErr != nil {
 		return fmt.Errorf("iam/core registrate user %s failed error: %w", user.Login, createErr)
 	}

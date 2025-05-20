@@ -2,6 +2,7 @@ version: '3'
 
 env:
   ROOT_TOKEN: "I5gVSOrW5Fb4G+2iRMcFkj3+cSuWrBB+foUcXZzGhkI="
+  JWT_TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzeXMvdXNlcnMvdXNlcjEiLCJleHAiOjIwNjMxMjEzMTAsImlhdCI6MTc0Nzc2MTMxMCwiU2lkIjoiODkwMjBiNDMtYzhmOC00NDA1LThiYjEtM2EzMmI5NDU0NjJiIn0.QWrsCh6O0Jx6RPW0hSOAJkzjmyGG1D-milkRELRTjOs'
 
 tasks:
   status:
@@ -21,11 +22,7 @@ tasks:
 
   auth-params:
     cmds:
-      - "curl -v http://127.0.0.1:8080/api/engine/auth/logopass | jq"
-
-  register:
-    cmds:
-      - "curl -v -X POST -d '{\"login\": \"admin\", \"password\": \"admin\"}'  http://127.0.0.1:8080/api/engine/auth/logopass/register| jq"
+      - 'curl -H "Authorization: Bearer $JWT_TOKEN" -v http://127.0.0.1:8080/api/engine/auth/logopass/ | jq'
 
   enable_auth-*:
     vars:
@@ -35,7 +32,11 @@ tasks:
 
   login:
     cmds:
-      - "curl -v -X POST -d '{\"login\": \"admin\", \"password\": \"admin\"}'  http://127.0.0.1:8080/api/engine/auth/logopass/login| jq"
+      - "curl -v -X POST -d '{\"login\": \"user1\", \"password\": \"qwerty$4\"}'  http://127.0.0.1:8080/api/engine/auth/logopass/login| jq"
+
+  register:
+    cmds:
+      - "curl -v -X POST -d '{\"login\": \"user1\", \"password\": \"qwerty$4\"}'  http://127.0.0.1:8080/api/engine/auth/logopass/register| jq"
 
   run:
     cmds:

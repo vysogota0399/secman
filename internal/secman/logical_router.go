@@ -65,8 +65,6 @@ func (r *LogicalRouter) Resolve(path string) (LogicalBackend, error) {
 		return nil, fmt.Errorf("router: path %s: %w", path, ErrEngineNotFound)
 	}
 
-	r.lg.DebugCtx(context.Background(), "resolved engine", zap.String("engine", str))
-
 	be, ok := engine.(LogicalBackend)
 	if !ok {
 		return nil, fmt.Errorf("type cast to backend failed for engine %s %T", str, engine)

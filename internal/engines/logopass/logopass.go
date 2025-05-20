@@ -39,11 +39,16 @@ func NewLogopass(iam IamAdapter, lg *logging.ZapLogger) *Logopass {
 func (lp Logopass) Login(ctx context.Context, user repositories.User, backend *Backend) (string, error) {
 	params := backend.getParams()
 
+	ttl := params.TokenTTL
+	if ttl == time.Duration(0) {
+		ttl = time.Hour * 24 * 365 * 10
+	}
+
 	now := time.Now()
 	session := repositories.Session{
 		UUID:      uuid.New().String(),
 		Sub:       user.Path,
-		ExpiredAt: now.Add(params.TokenTTL),
+		ExpiredAt: now.Add(ttl),
 		CreatedAt: now,
 		Engine:    "logopass",
 	}

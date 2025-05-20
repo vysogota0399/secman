@@ -16,11 +16,16 @@ type RegisterRequest struct {
 }
 
 func (b *Backend) registerHandler(ctx *gin.Context) (*secman.LogicalResponse, error) {
+	path := b.Paths()[http.MethodPost][b.logicalPath(ctx)]
+
 	var req RegisterRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		return &secman.LogicalResponse{
-			Status:  http.StatusBadRequest,
-			Message: gin.H{"error": "invalid request, expected login and password"},
+			Status: http.StatusBadRequest,
+			Message: gin.H{
+				"error":  "invalid request body",
+				"schema": path.Fields,
+			},
 		}, nil
 	}
 
