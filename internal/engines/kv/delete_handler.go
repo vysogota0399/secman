@@ -8,8 +8,8 @@ import (
 )
 
 func (b *Backend) DeleteHandler(ctx *gin.Context, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
-	b.beMtx.Lock()
-	defer b.beMtx.Unlock()
+	b.beMtx.RLock()
+	defer b.beMtx.RUnlock()
 
 	key := params.Params["key"]
 

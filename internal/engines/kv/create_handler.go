@@ -9,8 +9,8 @@ import (
 )
 
 func (b *Backend) CreateHandler(ctx *gin.Context, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
-	b.beMtx.Lock()
-	defer b.beMtx.Unlock()
+	b.beMtx.RLock()
+	defer b.beMtx.RUnlock()
 
 	createParams, ok := params.Body.(*CreateSecretBody)
 	if !ok {

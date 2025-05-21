@@ -7,6 +7,7 @@ import (
 	"github.com/vysogota0399/secman/internal/engines/kv"
 	"github.com/vysogota0399/secman/internal/engines/logopass"
 	logopass_repositories "github.com/vysogota0399/secman/internal/engines/logopass/repositories"
+	"github.com/vysogota0399/secman/internal/engines/pci_dss"
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
 	"github.com/vysogota0399/secman/internal/secman/bariers"
@@ -45,6 +46,9 @@ func CreateApp() fx.Option {
 
 			AsBackend(kv.NewBackend),
 			kv.NewRepository,
+
+			AsBackend(pci_dss.NewBackend),
+			pci_dss.NewRepository,
 
 			// iam
 			fx.Annotate(iam_repositories.NewSessions, fx.As(new(iam.SessionsRepository))),

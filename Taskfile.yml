@@ -74,3 +74,8 @@ tasks:
   update-secret-params:
     cmds:
       - 'curl -v -X PUT -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/kv/test/params -d "{\"metadata\": {\"lorem\": \"ipsum\"}}" | jq'
+
+  create-card:
+    cmds:
+      - 'curl -v -X POST -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/pci_dss -d "{\"card_data\": {\"pan\": \"1234567890123458\", \"cardholder_name\": \"John Doe\", \"expiry_date\": \"2025-01-01T00:00:00Z\"}}" | jq'
+  

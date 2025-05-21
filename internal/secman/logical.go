@@ -10,6 +10,8 @@ import (
 var (
 	ErrEngineAlreadyEnabled = errors.New("engine already enabled")
 	ErrEngineIsNotEnabled   = errors.New("engine is not enabled")
+	// ErrLogicalResponse is a error that is used to return logical response, not error
+	ErrLogicalResponse = errors.New("") // empty message
 )
 
 // Backend is engine for manage secrets or other operations.
