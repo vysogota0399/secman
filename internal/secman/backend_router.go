@@ -109,14 +109,16 @@ func (r *BackendRouter) Handle(ctx *gin.Context) (*LogicalResponse, error) {
 		}
 
 		if node.Metadata.Body != nil {
-			node.Body = node.Metadata.Body()
+			body := node.Metadata.Body()
 
-			if err := ctx.ShouldBindJSON(&node.Body); err != nil {
+			if err := ctx.ShouldBindJSON(body); err != nil {
 				return &LogicalResponse{
 					Status:  http.StatusBadRequest,
 					Message: "unsupported body schema",
 				}, nil
 			}
+
+			node.Body = body
 		}
 
 		return node.Metadata.Handler(ctx, &LogicalParams{Params: node.Fields, Body: node.Body})

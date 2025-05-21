@@ -12,14 +12,13 @@ import (
 	"github.com/vysogota0399/secman/internal/secman"
 	"github.com/vysogota0399/secman/internal/secman/iam"
 	"github.com/vysogota0399/secman/internal/secman/iam/repositories"
-	iam_repositories "github.com/vysogota0399/secman/internal/secman/iam/repositories"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type IamAdapter interface {
-	Login(ctx context.Context, session iam_repositories.Session) error
+	Login(ctx context.Context, session repositories.Session) error
 	Authorize(ctx context.Context, token string) (repositories.Session, error)
-	Register(ctx context.Context, user iam_repositories.User) error
+	Register(ctx context.Context, user repositories.User) error
 	GetUser(ctx context.Context, login string) (repositories.User, error)
 }
 

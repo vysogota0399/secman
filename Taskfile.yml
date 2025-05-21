@@ -51,3 +51,10 @@ tasks:
       STRUCT: '{{index .MATCH 0}}'
     cmds:
       - mockgen -package=mocks -destination=pkg/mocks/{{.CLI_ARGS}}/{{.STRUCT}}.go github.com/vysogota0399/secman/{{.CLI_ARGS}} {{.STRUCT}}
+
+  test_coverage:
+    cmds:
+      - go clean -testcache
+      - go test -count 1 ./... -coverprofile=coverage.out
+      - go tool cover -func=coverage.out
+      - rm coverage.out

@@ -2,6 +2,7 @@ package logopass
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,19 +11,10 @@ import (
 	"go.uber.org/zap"
 )
 
-func (b *Backend) registerHandler(ctx *gin.Context) (*secman.LogicalResponse, error) {
-	path := b.Paths()[http.MethodPost][b.logicalPath(ctx)]
-
-	body := path.Body.(RegisterPathBody)
-
-	if err := ctx.ShouldBindJSON(&body); err != nil {
-		return &secman.LogicalResponse{
-			Status: http.StatusBadRequest,
-			Message: gin.H{
-				"error":  "invalid request body",
-				"schema": path.Fields,
-			},
-		}, nil
+func (b *Backend) registerHandler(ctx *gin.Context, requestParams *secman.LogicalParams) (*secman.LogicalResponse, error) {
+	body, ok := requestParams.Body.(*RegisterPathBody)
+	if !ok {
+		return nil, fmt.Errorf("type cast error got %T, expected pointer", requestParams.Body)
 	}
 
 	user := iam_repositories.User{

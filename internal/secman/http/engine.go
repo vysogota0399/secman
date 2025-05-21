@@ -8,15 +8,15 @@ import (
 	"go.uber.org/zap"
 )
 
-type EnginesCrud struct {
+type Engine struct {
 	core *secman.Core
 }
 
-func NewEnginesCrud(core *secman.Core) *EnginesCrud {
-	return &EnginesCrud{core: core}
+func NewEngine(core *secman.Core) *Engine {
+	return &Engine{core: core}
 }
 
-func (h *EnginesCrud) Handler() func(c *gin.Context) {
+func (h *Engine) Handler() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		path := c.Param("path")
 		backend, err := h.core.Router.Resolve(path)

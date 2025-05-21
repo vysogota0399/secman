@@ -53,7 +53,7 @@ func TestBackendRouter(t *testing.T) {
 						Description: "The ID of the test",
 					},
 				},
-				Body: func() any { return TestBody{} },
+				Body: func() any { return &TestBody{} },
 			},
 		},
 	})

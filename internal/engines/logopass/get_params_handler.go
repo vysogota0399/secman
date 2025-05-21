@@ -8,7 +8,7 @@ import (
 	"github.com/vysogota0399/secman/internal/secman"
 )
 
-func (b *Backend) getParamsHandler(ctx *gin.Context) (*secman.LogicalResponse, error) {
+func (b *Backend) getParamsHandler(ctx *gin.Context, requestParams *secman.LogicalParams) (*secman.LogicalResponse, error) {
 	params := b.getParams()
 
 	return &secman.LogicalResponse{

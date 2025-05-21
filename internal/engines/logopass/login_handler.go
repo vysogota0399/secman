@@ -1,25 +1,17 @@
 package logopass
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/vysogota0399/secman/internal/secman"
 )
 
-func (b *Backend) LoginHandler(c *gin.Context) (*secman.LogicalResponse, error) {
-	path := b.Paths()[http.MethodPost][b.logicalPath(c)]
-
-	body := path.Body.(LoginPathBody)
-
-	if err := c.ShouldBindJSON(&body); err != nil {
-		return &secman.LogicalResponse{
-			Status: http.StatusBadRequest,
-			Message: gin.H{
-				"error":  "invalid request body",
-				"schema": path.Fields,
-			},
-		}, nil
+func (b *Backend) LoginHandler(c *gin.Context, requestParams *secman.LogicalParams) (*secman.LogicalResponse, error) {
+	body, ok := requestParams.Body.(*LoginPathBody)
+	if !ok {
+		return nil, fmt.Errorf("type cast error got %T, expected pointer", requestParams.Body)
 	}
 
 	user, err := b.logopass.Authenticate(c.Request.Context(), body.Login, body.Password)

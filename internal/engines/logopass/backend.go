@@ -10,7 +10,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/vysogota0399/secman/internal/engines/logopass/repositories"
 	logopass_repositories "github.com/vysogota0399/secman/internal/engines/logopass/repositories"
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
@@ -23,19 +22,19 @@ var (
 
 type ParamsRepository interface {
 	IsExist(ctx context.Context) (bool, error)
-	Get(ctx context.Context) (*repositories.Params, error)
-	Update(ctx context.Context, params *repositories.Params) error
+	Get(ctx context.Context) (*logopass_repositories.Params, error)
+	Update(ctx context.Context, params *logopass_repositories.Params) error
 }
 
 var (
-	_ ParamsRepository        = &repositories.ParamsRepository{}
+	_ ParamsRepository        = &logopass_repositories.ParamsRepository{}
 	_ secman.AuthorizeBackend = &Backend{}
 )
 
 type Backend struct {
 	beMtx     sync.RWMutex
 	exist     *atomic.Bool
-	params    *repositories.Params
+	params    *logopass_repositories.Params
 	lg        *logging.ZapLogger
 	paramsRep ParamsRepository
 	logopass  *Logopass
@@ -49,7 +48,7 @@ func NewBackend(lg *logging.ZapLogger, logopass *Logopass, barrier secman.IBarri
 		logopass: logopass,
 		beMtx:    sync.RWMutex{},
 		exist:    &atomic.Bool{},
-		params:   &repositories.Params{},
+		params:   &logopass_repositories.Params{},
 		tokenReg: regexp.MustCompile(`Bearer\s+(\S+)`),
 	}
 
@@ -75,18 +74,18 @@ func (b *Backend) Help() string {
 }
 
 type LoginPathBody struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
+	Login    string `json:"login" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 type RegisterPathBody struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
+	Login    string `json:"login" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 type ParamsPathBody struct {
-	TokenTTL  int    `json:"token_ttl"`
-	SecretKey string `json:"secret_key"`
+	TokenTTL  int    `json:"token_ttl" binding:"required"`
+	SecretKey string `json:"secret_key" binding:"required"`
 }
 
 func (b *Backend) Paths() map[string]map[string]*secman.Path {
@@ -99,7 +98,7 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 	}
 	paths[http.MethodPost][loginPath] = &secman.Path{
 		Description: "Login to the system by login and password",
-		Body:        func() any { return LoginPathBody{} },
+		Body:        func() any { return &LoginPathBody{} },
 		Handler:     b.LoginHandler,
 		SkipAuth:    true,
 	}
@@ -112,7 +111,7 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 	paths[http.MethodPost][registerPath] = &secman.Path{
 		Handler:     b.registerHandler,
 		Description: "Register a new user",
-		Body:        func() any { return RegisterPathBody{} },
+		Body:        func() any { return &RegisterPathBody{} },
 		SkipAuth:    true,
 	}
 
@@ -133,7 +132,7 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 	paths[http.MethodPut][paramsPath] = &secman.Path{
 		Handler:     nil,
 		Description: "Set the params",
-		Body:        func() any { return ParamsPathBody{} },
+		Body:        func() any { return &ParamsPathBody{} },
 	}
 
 	return paths
@@ -150,7 +149,7 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 		}, nil
 	}
 
-	params := &repositories.Params{}
+	params := &logopass_repositories.Params{}
 	b.params = params
 
 	if err := req.ShouldBindJSON(params); err != nil {
