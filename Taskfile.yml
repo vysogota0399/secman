@@ -2,7 +2,7 @@ version: '3'
 
 env:
   ROOT_TOKEN: "I5gVSOrW5Fb4G+2iRMcFkj3+cSuWrBB+foUcXZzGhkI="
-  JWT_TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzeXMvdXNlcnMvdXNlcjEiLCJleHAiOjIwNjMxMjEzMTAsImlhdCI6MTc0Nzc2MTMxMCwiU2lkIjoiODkwMjBiNDMtYzhmOC00NDA1LThiYjEtM2EzMmI5NDU0NjJiIn0.QWrsCh6O0Jx6RPW0hSOAJkzjmyGG1D-milkRELRTjOs'
+  JWT_TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzeXMvdXNlcnMvdXNlcjEiLCJleHAiOjIwNjMyMDEwMDUsImlhdCI6MTc0Nzg0MTAwNSwiU2lkIjoiOWI0MTlhOWItZjlhNS00OTQ5LThkMGQtZTMyNTY4ZDM3ZjQ2In0.lj3W5DyXEslgxTmDuli0nj3hXmKaxV7FmwUeqV44uuI'
 
 tasks:
   status:
@@ -18,7 +18,7 @@ tasks:
     vars:
       ENGINE: '{{index .MATCH 0}}'
     cmds:
-      - 'curl -v -X POST -H "X-Secman-Token: $ROOT_TOKEN" http://127.0.0.1:8080/api/sys/enable/{{.ENGINE}} -d "{}" | jq'
+      - 'curl -v -X POST -H "X-Secman-Token: $ROOT_TOKEN" http://127.0.0.1:8080/api/sys/engines/enable/{{.ENGINE}} -d "{}" | jq'
 
   auth-params:
     cmds:
@@ -58,3 +58,19 @@ tasks:
       - go test -count 1 ./... -coverprofile=coverage.out
       - go tool cover -func=coverage.out
       - rm coverage.out
+
+  create-secret:
+    cmds:
+      - 'curl -v -X POST -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/kv -d "{\"key\": \"test\", \"value\": \"test\"}" | jq'
+
+  get-secret:
+    cmds:
+      - 'curl -v -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/kv/test | jq'
+
+  get-secret-params:
+    cmds:
+      - 'curl -v -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/kv/test/params | jq'
+
+  update-secret-params:
+    cmds:
+      - 'curl -v -X PUT -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/kv/test/params -d "{\"metadata\": {\"lorem\": \"ipsum\"}}" | jq'

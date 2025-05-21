@@ -78,3 +78,49 @@ func (s *RedisStorage) Update(ctx context.Context, path string, entry secman.Phy
 func (s *RedisStorage) Delete(ctx context.Context, path string) error {
 	return nil
 }
+
+func (s *RedisStorage) List(ctx context.Context, path string) ([]secman.Entry, error) {
+	var entries []secman.Entry
+	var cursor uint64
+	var err error
+
+	for {
+		var keys []string
+		keys, cursor, err = s.rdb.Scan(ctx, cursor, path+"*", 10).Result()
+		if err != nil {
+			return nil, fmt.Errorf("storage: failed to scan keys: %w", err)
+		}
+
+		if len(keys) > 0 {
+			// Use pipeline for better performance
+			pipe := s.rdb.Pipeline()
+			cmds := make([]*redis.StringCmd, len(keys))
+
+			for i, key := range keys {
+				cmds[i] = pipe.Get(ctx, key)
+			}
+
+			_, err = pipe.Exec(ctx)
+			if err != nil && err != redis.Nil {
+				return nil, fmt.Errorf("storage: failed to get values: %w", err)
+			}
+
+			// Process results
+			for i, cmd := range cmds {
+				val, err := cmd.Bytes()
+				if err == nil {
+					entries = append(entries, secman.Entry{
+						Path:  keys[i],
+						Value: string(val),
+					})
+				}
+			}
+		}
+
+		if cursor == 0 {
+			break
+		}
+	}
+
+	return entries, nil
+}

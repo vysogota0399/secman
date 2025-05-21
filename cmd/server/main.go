@@ -4,11 +4,14 @@ import (
 	"context"
 	"os"
 
+	"github.com/vysogota0399/secman/internal/engines/kv"
 	"github.com/vysogota0399/secman/internal/engines/logopass"
+	logopass_repositories "github.com/vysogota0399/secman/internal/engines/logopass/repositories"
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
 	"github.com/vysogota0399/secman/internal/secman/bariers"
 	"github.com/vysogota0399/secman/internal/secman/config"
+
 	"github.com/vysogota0399/secman/internal/secman/http"
 	"github.com/vysogota0399/secman/internal/secman/iam"
 	iam_repositories "github.com/vysogota0399/secman/internal/secman/iam/repositories"
@@ -38,6 +41,10 @@ func CreateApp() fx.Option {
 			// engines
 			AsBackend(logopass.NewBackend),
 			logopass.NewLogopass,
+			fx.Annotate(logopass_repositories.NewParamsRepository, fx.As(new(logopass.ParamsRepository))),
+
+			AsBackend(kv.NewBackend),
+			kv.NewRepository,
 
 			// iam
 			fx.Annotate(iam_repositories.NewSessions, fx.As(new(iam.SessionsRepository))),

@@ -66,7 +66,7 @@ func (a *Auth) PostUnseal(ctx context.Context, router *LogicalRouter) error {
 
 		authBackend, ok := engine.(AuthorizeBackend)
 		if !ok {
-			return fmt.Errorf("auth: engine %s is not an AuthorizeBackend", engine.RootPath())
+			return nil
 		}
 
 		a.engineCollection = append(a.engineCollection, authBackend)

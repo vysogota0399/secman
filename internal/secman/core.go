@@ -31,6 +31,7 @@ type IStorage interface {
 	Get(ctx context.Context, path string) (PhysicalEntry, error)
 	Update(ctx context.Context, path string, value PhysicalEntry, ttl time.Duration) error
 	Delete(ctx context.Context, path string) error
+	List(ctx context.Context, path string) ([]Entry, error)
 }
 
 var ErrEntryNotFound = errors.New("entry not found")
@@ -44,6 +45,7 @@ type IBarrier interface {
 	Update(ctx context.Context, path string, value Entry, ttl time.Duration) error
 	Delete(ctx context.Context, path string) error
 	Unseal(ctx context.Context, key []byte) error
+	List(ctx context.Context, path string) ([]Entry, error)
 }
 
 type IRootTokens interface {

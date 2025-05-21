@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/vysogota0399/secman/internal/logging"
@@ -22,8 +21,8 @@ type ParamsRepository struct {
 	path string
 }
 
-func NewParamsRepository(lg *logging.ZapLogger, b secman.IBarrier, basePath string) *ParamsRepository {
-	return &ParamsRepository{lg: lg, b: b, path: strings.TrimPrefix(basePath, "/")}
+func NewParamsRepository(lg *logging.ZapLogger, b secman.IBarrier) *ParamsRepository {
+	return &ParamsRepository{lg: lg, b: b, path: "auth/logopass"}
 }
 
 func (r *ParamsRepository) IsExist(ctx context.Context) (bool, error) {

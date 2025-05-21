@@ -91,7 +91,7 @@ func (r *BackendRouter) Handle(ctx *gin.Context) (*LogicalResponse, error) {
 	if !ok {
 		return &LogicalResponse{
 			Status:  http.StatusNotFound,
-			Message: "not found",
+			Message: gin.H{"error": "not found"},
 		}, nil
 	}
 
@@ -100,7 +100,7 @@ func (r *BackendRouter) Handle(ctx *gin.Context) (*LogicalResponse, error) {
 		if err != nil {
 			return &LogicalResponse{
 				Status:  http.StatusBadRequest,
-				Message: "unsupported path params",
+				Message: gin.H{"error": "unsupported path params"},
 			}, nil
 		}
 
@@ -114,7 +114,7 @@ func (r *BackendRouter) Handle(ctx *gin.Context) (*LogicalResponse, error) {
 			if err := ctx.ShouldBindJSON(body); err != nil {
 				return &LogicalResponse{
 					Status:  http.StatusBadRequest,
-					Message: "unsupported body schema",
+					Message: gin.H{"error": "unsupported body schema"},
 				}, nil
 			}
 
@@ -126,6 +126,6 @@ func (r *BackendRouter) Handle(ctx *gin.Context) (*LogicalResponse, error) {
 
 	return &LogicalResponse{
 		Status:  http.StatusNotFound,
-		Message: "not found",
+		Message: gin.H{"error": "not found"},
 	}, nil
 }

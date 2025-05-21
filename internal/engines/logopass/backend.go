@@ -42,17 +42,16 @@ type Backend struct {
 	router    *secman.BackendRouter
 }
 
-func NewBackend(lg *logging.ZapLogger, logopass *Logopass, barrier secman.IBarrier) *Backend {
+func NewBackend(lg *logging.ZapLogger, logopass *Logopass, barrier secman.IBarrier, paramsRep ParamsRepository) *Backend {
 	be := &Backend{
-		lg:       lg,
-		logopass: logopass,
-		beMtx:    sync.RWMutex{},
-		exist:    &atomic.Bool{},
-		params:   &logopass_repositories.Params{},
-		tokenReg: regexp.MustCompile(`Bearer\s+(\S+)`),
+		lg:        lg,
+		logopass:  logopass,
+		beMtx:     sync.RWMutex{},
+		exist:     &atomic.Bool{},
+		params:    &logopass_repositories.Params{},
+		tokenReg:  regexp.MustCompile(`Bearer\s+(\S+)`),
+		paramsRep: paramsRep,
 	}
-
-	be.paramsRep = logopass_repositories.NewParamsRepository(lg, barrier, PATH)
 
 	return be
 }

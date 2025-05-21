@@ -2,10 +2,12 @@ package kv
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 	"sync/atomic"
 
+	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
 )
 
@@ -15,6 +17,17 @@ type Backend struct {
 	beMtx  sync.RWMutex
 	exist  *atomic.Bool
 	router *secman.BackendRouter
+	repo   *Repository
+	lg     *logging.ZapLogger
+}
+
+func NewBackend(lg *logging.ZapLogger, repo *Repository) *Backend {
+	return &Backend{
+		lg:    lg,
+		repo:  repo,
+		exist: &atomic.Bool{},
+		beMtx: sync.RWMutex{},
+	}
 }
 
 const PATH = "/secrets/kv"
@@ -40,11 +53,15 @@ type CreateSecretBody struct {
 	Value string `json:"value" binding:"required"`
 }
 
+type ParamsBody struct {
+	Metadata map[string]string `json:"metadata"`
+}
+
 func (b *Backend) Paths() map[string]map[string]*secman.Path {
 	return map[string]map[string]*secman.Path{
 		http.MethodGet: {
 			PATH + "/:key": {
-				Handler:     nil,
+				Handler:     b.ShowHandler,
 				Description: "Get a key-value pair",
 				Fields: []secman.Field{
 					{
@@ -54,7 +71,7 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 				},
 			},
 			PATH + "/:key/params": {
-				Handler:     nil,
+				Handler:     b.ShowParamsHandler,
 				Description: "Get the params of a key-value pair",
 				Fields: []secman.Field{
 					{
@@ -63,17 +80,21 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 					},
 				},
 			},
+			PATH: {
+				Handler:     b.IndexHandler,
+				Description: "Get all key-value pairs",
+			},
 		},
 		http.MethodPost: {
-			PATH + "/": {
-				Handler:     nil,
+			PATH: {
+				Handler:     b.CreateHandler,
 				Description: "Create a key-value pair",
 				Body:        func() any { return &CreateSecretBody{} },
 			},
 		},
 		http.MethodDelete: {
 			PATH + "/:key": {
-				Handler:     nil,
+				Handler:     b.DeleteHandler,
 				Description: "Delete a key-value pair",
 				Fields: []secman.Field{
 					{
@@ -85,7 +106,7 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 		},
 		http.MethodPut: {
 			PATH + "/:key/params": {
-				Handler:     nil,
+				Handler:     b.UpdateParamsHandler,
 				Description: "Update a key-value pair",
 				Fields: []secman.Field{
 					{
@@ -93,16 +114,49 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 						Description: "The key to update",
 					},
 				},
-				Body: func() any { return make(map[string]string) },
+				Body: func() any { return &ParamsBody{} },
 			},
 		},
 	}
 }
 
 func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secman.LogicalResponse, error) {
-	return nil, nil
+	b.beMtx.Lock()
+	defer b.beMtx.Unlock()
+
+	if b.exist.Load() {
+		return &secman.LogicalResponse{
+			Status:  http.StatusNotModified,
+			Message: "kv: already enabled",
+		}, nil
+	}
+
+	if err := b.repo.Enable(ctx); err != nil {
+		return nil, fmt.Errorf("kv: enable failed error when enabling %w", err)
+	}
+
+	b.exist.Store(true)
+
+	return &secman.LogicalResponse{
+		Status:  http.StatusOK,
+		Message: "kv enabled",
+	}, nil
 }
 
 func (b *Backend) PostUnseal(ctx context.Context) error {
+	b.beMtx.Lock()
+	defer b.beMtx.Unlock()
+
+	ok, err := b.repo.IsExist(ctx)
+	if err != nil {
+		return fmt.Errorf("kv: post unseal failed error when checking if engine is enabled %w", err)
+	}
+
+	if !ok {
+		return fmt.Errorf("kv: post unseal failed error: %w", secman.ErrEngineIsNotEnabled)
+	}
+
+	b.exist.Store(true)
+
 	return nil
 }
