@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
 	"go.uber.org/zap"
 )
@@ -26,35 +25,13 @@ func (h *EnginesCrud) Handler() func(c *gin.Context) {
 			return
 		}
 
-		errMsg := gin.H{"error": "engine not found for specified path and method"}
-		paths, ok := backend.Paths()[c.Request.Method]
-		if !ok {
-			c.JSON(http.StatusNotFound, errMsg)
+		resp, err := backend.Router().Handle(c)
+		if err != nil {
+			h.core.Log.ErrorCtx(c.Request.Context(), "error processing handler", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "request failed, see logs for more details"})
 			return
 		}
 
-		pathProcessor, ok := paths[path]
-		if !ok {
-			c.JSON(http.StatusNotFound, errMsg)
-			return
-		}
-
-		if pathProcessor.Handler == nil {
-			c.JSON(http.StatusNotImplemented, gin.H{"error": "path not implemented"})
-			return
-		}
-
-		processHandler(c, h.core.Log, pathProcessor.Handler)
+		c.JSON(resp.Status, resp.Message)
 	}
-}
-
-func processHandler(c *gin.Context, lg *logging.ZapLogger, h func(c *gin.Context) (*secman.LogicalResponse, error)) {
-	resp, err := h(c)
-	if err != nil {
-		lg.ErrorCtx(c.Request.Context(), "error processing handler", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "request failed, see logs for more details"})
-		return
-	}
-
-	c.JSON(resp.Status, resp.Message)
 }

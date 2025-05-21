@@ -7,16 +7,12 @@ import (
 	"github.com/vysogota0399/secman/internal/secman"
 )
 
-type LoginRequest struct {
-	Login    string `json:"login" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
 func (b *Backend) LoginHandler(c *gin.Context) (*secman.LogicalResponse, error) {
 	path := b.Paths()[http.MethodPost][b.logicalPath(c)]
 
-	var request LoginRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
+	body := path.Body.(LoginPathBody)
+
+	if err := c.ShouldBindJSON(&body); err != nil {
 		return &secman.LogicalResponse{
 			Status: http.StatusBadRequest,
 			Message: gin.H{
@@ -26,7 +22,7 @@ func (b *Backend) LoginHandler(c *gin.Context) (*secman.LogicalResponse, error) 
 		}, nil
 	}
 
-	user, err := b.logopass.Authenticate(c.Request.Context(), request.Login, request.Password)
+	user, err := b.logopass.Authenticate(c.Request.Context(), body.Login, body.Password)
 	if err != nil {
 		return &secman.LogicalResponse{
 			Status:  http.StatusUnauthorized,

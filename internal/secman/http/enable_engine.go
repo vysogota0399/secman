@@ -29,7 +29,7 @@ func (h *EnableEngine) Handler() func(c *gin.Context) {
 			return
 		}
 
-		resp, err := be.Enable(c.Request.Context(), &secman.LogicalRequest{Context: c})
+		resp, err := h.router.EnableEngine(c.Request.Context(), be, &secman.LogicalRequest{Context: c})
 		if err != nil {
 			if errors.Is(err, secman.ErrEngineNotFound) {
 				c.JSON(http.StatusNotFound, gin.H{"error": "engine " + enginePath + " not found"})

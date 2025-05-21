@@ -40,6 +40,7 @@ type Backend struct {
 	paramsRep ParamsRepository
 	logopass  *Logopass
 	tokenReg  *regexp.Regexp
+	router    *secman.BackendRouter
 }
 
 func NewBackend(lg *logging.ZapLogger, logopass *Logopass, barrier secman.IBarrier) *Backend {
@@ -57,12 +58,35 @@ func NewBackend(lg *logging.ZapLogger, logopass *Logopass, barrier secman.IBarri
 	return be
 }
 
+func (b *Backend) Router() *secman.BackendRouter {
+	return b.router
+}
+
+func (b *Backend) SetRouter(router *secman.BackendRouter) {
+	b.router = router
+}
+
 func (b *Backend) RootPath() string {
 	return PATH
 }
 
 func (b *Backend) Help() string {
 	return "Logopass authentication backend, uses login and password to authenticate"
+}
+
+type LoginPathBody struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
+
+type RegisterPathBody struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
+
+type ParamsPathBody struct {
+	TokenTTL  int    `json:"token_ttl"`
+	SecretKey string `json:"secret_key"`
 }
 
 func (b *Backend) Paths() map[string]map[string]*secman.Path {
@@ -75,20 +99,9 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 	}
 	paths[http.MethodPost][loginPath] = &secman.Path{
 		Description: "Login to the system by login and password",
-		Fields: []secman.Field{
-			{
-				Name:        "login",
-				Description: "Login",
-				Required:    true,
-			},
-			{
-				Name:        "password",
-				Description: "Password",
-				Required:    true,
-			},
-		},
-		Handler:  b.LoginHandler,
-		SkipAuth: true,
+		Body:        func() any { return LoginPathBody{} },
+		Handler:     b.LoginHandler,
+		SkipAuth:    true,
 	}
 
 	// Register path
@@ -99,19 +112,8 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 	paths[http.MethodPost][registerPath] = &secman.Path{
 		Handler:     b.registerHandler,
 		Description: "Register a new user",
-		Fields: []secman.Field{
-			{
-				Name:        "login",
-				Description: "Login",
-				Required:    true,
-			},
-			{
-				Name:        "password",
-				Description: "Password",
-				Required:    true,
-			},
-		},
-		SkipAuth: true,
+		Body:        func() any { return RegisterPathBody{} },
+		SkipAuth:    true,
 	}
 
 	// Get params path
@@ -131,16 +133,7 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 	paths[http.MethodPut][paramsPath] = &secman.Path{
 		Handler:     nil,
 		Description: "Set the params",
-		Fields: []secman.Field{
-			{
-				Name:        "token_ttl",
-				Description: "Token TTL",
-			},
-			{
-				Name:        "secret_key",
-				Description: "Secret Key",
-			},
-		},
+		Body:        func() any { return ParamsPathBody{} },
 	}
 
 	return paths

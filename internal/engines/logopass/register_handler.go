@@ -10,16 +10,12 @@ import (
 	"go.uber.org/zap"
 )
 
-type RegisterRequest struct {
-	Login    string `json:"login" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
 func (b *Backend) registerHandler(ctx *gin.Context) (*secman.LogicalResponse, error) {
 	path := b.Paths()[http.MethodPost][b.logicalPath(ctx)]
 
-	var req RegisterRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	body := path.Body.(RegisterPathBody)
+
+	if err := ctx.ShouldBindJSON(&body); err != nil {
 		return &secman.LogicalResponse{
 			Status: http.StatusBadRequest,
 			Message: gin.H{
@@ -30,8 +26,8 @@ func (b *Backend) registerHandler(ctx *gin.Context) (*secman.LogicalResponse, er
 	}
 
 	user := iam_repositories.User{
-		Login:    req.Login,
-		Password: req.Password,
+		Login:    body.Login,
+		Password: body.Password,
 	}
 
 	if err := b.logopass.Register(ctx, user); err != nil {

@@ -117,11 +117,7 @@ func NewRouter(
 		unsealed.POST("/sys/engines/enable/*engine_path", NewEnableEngine(core).Handler())
 		unsealed.POST("/sys/auth/enable", NewEnableAuth(core).Handler())
 
-		enginesCrud := NewEnginesCrud(core)
-		unsealed.DELETE("/engine/*path", enginesCrud.Handler())
-		unsealed.PUT("/engine/*path", enginesCrud.Handler())
-		unsealed.POST("/engine/*path", enginesCrud.Handler())
-		unsealed.GET("/engine/*path", enginesCrud.Handler())
+		unsealed.Any("/engine/*path", NewEnginesCrud(core).Handler())
 	}
 
 	return r

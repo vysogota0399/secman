@@ -43,3 +43,11 @@ tasks:
       - go build cmd/server/main.go
       - mv main secman
       - ./secman
+
+  genmock-*:
+    desc: exec "task genmock-OrdersRepository -- internal/server/entities"
+          then rename internal/server/entities/mocks/CreateOrderService to snake case
+    vars:
+      STRUCT: '{{index .MATCH 0}}'
+    cmds:
+      - mockgen -package=mocks -destination=pkg/mocks/{{.CLI_ARGS}}/{{.STRUCT}}.go github.com/vysogota0399/secman/{{.CLI_ARGS}} {{.STRUCT}}

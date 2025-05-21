@@ -38,6 +38,7 @@ func NewLogicalRouter(engines []LogicalBackend, coreRepository *CoreRepository, 
 	return router, nil
 }
 
+// Register registers the engine to the router
 func (r *LogicalRouter) Register(ctx context.Context, engine LogicalBackend) error {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
@@ -56,6 +57,7 @@ var (
 	ErrEngineAlreadyRegistered = errors.New("engine already registered")
 )
 
+// Resolve resolves the engine from the path
 func (r *LogicalRouter) Resolve(path string) (LogicalBackend, error) {
 	r.mtx.RLock()
 	defer r.mtx.RUnlock()
@@ -73,6 +75,7 @@ func (r *LogicalRouter) Resolve(path string) (LogicalBackend, error) {
 	return be, nil
 }
 
+// PostUnsealEngines initializes the backend router for all engines and post unseal them
 func (r *LogicalRouter) PostUnsealEngines(ctx context.Context) error {
 	r.mtx.RLock()
 	defer r.mtx.RUnlock()
@@ -85,6 +88,10 @@ func (r *LogicalRouter) PostUnsealEngines(ctx context.Context) error {
 			return fmt.Errorf("router: type cast backend to engine failed %T", engine)
 		}
 
+		if err := r.initBackendRouter(be); err != nil {
+			return fmt.Errorf("router: init backend router failed error: %w", err)
+		}
+
 		if err := be.PostUnseal(ctx); err != nil {
 			if errors.Is(err, ErrEngineIsNotEnabled) {
 				r.lg.DebugCtx(ctx, "router: engine is not enabled, skip", zap.String("engine", be.RootPath()))
@@ -95,5 +102,29 @@ func (r *LogicalRouter) PostUnsealEngines(ctx context.Context) error {
 		}
 	}
 
+	return nil
+}
+
+// EnableEngine enables the engine and initializes the backend router
+func (r *LogicalRouter) EnableEngine(ctx context.Context, engine LogicalBackend, req *LogicalRequest) (*LogicalResponse, error) {
+	if err := r.initBackendRouter(engine); err != nil {
+		return nil, fmt.Errorf("router: init backend router failed error: %w", err)
+	}
+
+	resp, err := engine.Enable(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("router: enable engine %s error: %w", engine.RootPath(), err)
+	}
+
+	return resp, nil
+}
+
+func (r *LogicalRouter) initBackendRouter(engine LogicalBackend) error {
+	router, err := NewBackendRouter(engine)
+	if err != nil {
+		return fmt.Errorf("router: init backend router failed error: %w", err)
+	}
+
+	engine.SetRouter(router)
 	return nil
 }
