@@ -76,7 +76,7 @@ func (s *RedisStorage) Update(ctx context.Context, path string, entry secman.Phy
 }
 
 func (s *RedisStorage) Delete(ctx context.Context, path string) error {
-	return nil
+	return s.rdb.Del(ctx, path).Err()
 }
 
 func (s *RedisStorage) List(ctx context.Context, path string) ([]secman.Entry, error) {

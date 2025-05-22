@@ -10,15 +10,15 @@ import (
 	"github.com/vysogota0399/secman/internal/secman"
 )
 
-func (b *Backend) UpdateParamsHandler(ctx *gin.Context, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
+func (b *Backend) UpdateMetadataHandler(ctx *gin.Context, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
 	b.beMtx.RLock()
 	defer b.beMtx.RUnlock()
 
 	key := params.Params["key"]
 
-	entry, ok, err := b.repo.ParamsOk(ctx, key)
+	entry, ok, err := b.metadata.GetOk(ctx, key)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get key %s params: %w", key, err)
+		return nil, fmt.Errorf("failed to get key %s metadata: %w", key, err)
 	}
 
 	if !ok {
@@ -28,18 +28,18 @@ func (b *Backend) UpdateParamsHandler(ctx *gin.Context, params *secman.LogicalPa
 		}, nil
 	}
 
-	updateParams, ok := params.Body.(*ParamsBody)
+	updateMetadata, ok := params.Body.(*MetadataBody)
 	if !ok {
 		return nil, fmt.Errorf("type cast error got %T, ptr", params.Body)
 	}
 
-	newKeyParams := make(map[string]string, len(entry)+len(updateParams.Metadata))
-	maps.Copy(newKeyParams, entry)
-	maps.Copy(newKeyParams, updateParams.Metadata)
+	newKeyMetadata := make(map[string]string, len(entry)+len(updateMetadata.Metadata))
+	maps.Copy(newKeyMetadata, entry)
+	maps.Copy(newKeyMetadata, updateMetadata.Metadata)
 
-	err = b.repo.UpdateParams(ctx, key, newKeyParams)
+	err = b.metadata.Update(ctx, key, newKeyMetadata)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update key %s params: %w", key, err)
+		return nil, fmt.Errorf("failed to update key %s metadata: %w", key, err)
 	}
 
 	return &secman.LogicalResponse{

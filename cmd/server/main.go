@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/vysogota0399/secman/internal/engines/blobs"
 	"github.com/vysogota0399/secman/internal/engines/kv"
 	"github.com/vysogota0399/secman/internal/engines/logopass"
 	logopass_repositories "github.com/vysogota0399/secman/internal/engines/logopass/repositories"
@@ -46,9 +47,15 @@ func CreateApp() fx.Option {
 
 			AsBackend(kv.NewBackend),
 			kv.NewRepository,
+			kv.NewMetadataRepository,
 
 			AsBackend(pci_dss.NewBackend),
 			pci_dss.NewRepository,
+			pci_dss.NewMetadataRepository,
+
+			AsBackend(blobs.NewBackend),
+			blobs.NewRepository,
+			blobs.NewMetadataRepository,
 
 			// iam
 			fx.Annotate(iam_repositories.NewSessions, fx.As(new(iam.SessionsRepository))),

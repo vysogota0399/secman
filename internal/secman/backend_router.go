@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 type BackendRouterNode struct {
@@ -111,13 +112,23 @@ func (r *BackendRouter) Handle(ctx *gin.Context) (*LogicalResponse, error) {
 		if node.Metadata.Body != nil {
 			body := node.Metadata.Body()
 
-			if err := ctx.ShouldBindJSON(body); err != nil {
-				return &LogicalResponse{
-					Status:  http.StatusBadRequest,
-					Message: gin.H{"error": "unsupported body schema"},
-				}, nil
+			if ctx.Request.Header.Get("Content-Type") == "application/json" {
+				if err := ctx.ShouldBindJSON(body); err != nil {
+					return &LogicalResponse{
+						Status:  http.StatusBadRequest,
+						Message: gin.H{"error": "unsupported body schema"},
+					}, nil
+				}
 			}
 
+			if ctx.Request.Header.Get("Content-Type") == "multipart/form-data" {
+				if err := ctx.ShouldBindWith(body, binding.FormMultipart); err != nil {
+					return &LogicalResponse{
+						Status:  http.StatusBadRequest,
+						Message: gin.H{"error": "unsupported body schema"},
+					}, nil
+				}
+			}
 			node.Body = body
 		}
 

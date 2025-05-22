@@ -14,19 +14,21 @@ import (
 var _ secman.LogicalBackend = &Backend{}
 
 type Backend struct {
-	beMtx  sync.RWMutex
-	exist  *atomic.Bool
-	router *secman.BackendRouter
-	repo   *Repository
-	lg     *logging.ZapLogger
+	beMtx    sync.RWMutex
+	exist    *atomic.Bool
+	router   *secman.BackendRouter
+	repo     *Repository
+	metadata *MetadataRepository
+	lg       *logging.ZapLogger
 }
 
-func NewBackend(lg *logging.ZapLogger, repo *Repository) *Backend {
+func NewBackend(lg *logging.ZapLogger, repo *Repository, metadata *MetadataRepository) *Backend {
 	return &Backend{
-		lg:    lg,
-		repo:  repo,
-		exist: &atomic.Bool{},
-		beMtx: sync.RWMutex{},
+		lg:       lg,
+		repo:     repo,
+		metadata: metadata,
+		exist:    &atomic.Bool{},
+		beMtx:    sync.RWMutex{},
 	}
 }
 
@@ -53,7 +55,7 @@ type CreateSecretBody struct {
 	Value string `json:"value" binding:"required"`
 }
 
-type ParamsBody struct {
+type MetadataBody struct {
 	Metadata map[string]string `json:"metadata"`
 }
 
@@ -70,13 +72,13 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 					},
 				},
 			},
-			PATH + "/:key/params": {
-				Handler:     b.ShowParamsHandler,
-				Description: "Get the params of a key-value pair",
+			PATH + "/:key/metadata": {
+				Handler:     b.ShowMetadataHandler,
+				Description: "Get the metadata of a key-value pair",
 				Fields: []secman.Field{
 					{
 						Name:        "key",
-						Description: "The key to get the params of",
+						Description: "The key to get the metadata of",
 					},
 				},
 			},
@@ -105,8 +107,8 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 			},
 		},
 		http.MethodPut: {
-			PATH + "/:key/params": {
-				Handler:     b.UpdateParamsHandler,
+			PATH + "/:key/metadata": {
+				Handler:     b.UpdateMetadataHandler,
 				Description: "Update a key-value pair",
 				Fields: []secman.Field{
 					{
@@ -114,7 +116,7 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 						Description: "The key to update",
 					},
 				},
-				Body: func() any { return &ParamsBody{} },
+				Body: func() any { return &MetadataBody{} },
 			},
 		},
 	}

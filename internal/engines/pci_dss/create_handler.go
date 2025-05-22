@@ -19,8 +19,19 @@ func (b *Backend) CreateHandler(ctx *gin.Context, params *secman.LogicalParams) 
 		return nil, fmt.Errorf("type cast error got %T, expected pointer", params.Body)
 	}
 
-	data := createParams.CardData
-	panToken, err := b.processCreatePan(ctx, &data)
+	// Validate input
+	if err := b.validateCardData(&createParams.CardData); err != nil {
+		return &secman.LogicalResponse{
+			Status:  http.StatusBadRequest,
+			Message: gin.H{"error": err.Error()},
+		}, nil
+	}
+
+	// Create tokens map to track created resources for cleanup
+	createdTokens := make(map[string]string)
+
+	// Process PAN first as it's the main entity
+	panToken, err := b.processCreatePan(ctx, &createParams.CardData)
 	if err != nil {
 		if errors.Is(err, secman.ErrLogicalResponse) {
 			return &secman.LogicalResponse{
@@ -28,45 +39,57 @@ func (b *Backend) CreateHandler(ctx *gin.Context, params *secman.LogicalParams) 
 				Message: gin.H{"error": err.Error()},
 			}, nil
 		}
-
 		return nil, err
 	}
+	createdTokens["pan"] = panToken
 
-	cardholderNameToken, err := b.processCreateCardholderName(ctx, &data, panToken)
+	// Update metadata
+	if err := b.metadata.Update(ctx, panToken, map[string]string{"created_at": time.Now().Format(time.RFC3339)}); err != nil {
+		b.cleanupCreatedTokens(ctx, createdTokens)
+		return nil, fmt.Errorf("failed to update metadata: %w", err)
+	}
+
+	// Process cardholder name
+	cardholderNameToken, err := b.processCreateCardholderName(ctx, &createParams.CardData, panToken)
 	if err != nil {
+		b.cleanupCreatedTokens(ctx, createdTokens)
 		if errors.Is(err, secman.ErrLogicalResponse) {
 			return &secman.LogicalResponse{
 				Status:  http.StatusBadRequest,
 				Message: gin.H{"error": err.Error()},
 			}, nil
 		}
-
 		return nil, err
 	}
+	createdTokens["cardholder_name"] = cardholderNameToken
 
-	expiryDateToken, err := b.processCreateExpiryDate(ctx, &data, panToken)
+	// Process expiry date
+	expiryDateToken, err := b.processCreateExpiryDate(ctx, &createParams.CardData, panToken)
 	if err != nil {
+		b.cleanupCreatedTokens(ctx, createdTokens)
 		if errors.Is(err, secman.ErrLogicalResponse) {
 			return &secman.LogicalResponse{
 				Status:  http.StatusBadRequest,
 				Message: gin.H{"error": err.Error()},
 			}, nil
 		}
-
 		return nil, err
 	}
+	createdTokens["expiry_date"] = expiryDateToken
 
-	securityCodeToken, err := b.processCreateSecurityCode(ctx, &data, panToken)
+	// Process security code
+	securityCodeToken, err := b.processCreateSecurityCode(ctx, &createParams.CardData, panToken)
 	if err != nil {
+		b.cleanupCreatedTokens(ctx, createdTokens)
 		if errors.Is(err, secman.ErrLogicalResponse) {
 			return &secman.LogicalResponse{
 				Status:  http.StatusBadRequest,
 				Message: gin.H{"error": err.Error()},
 			}, nil
 		}
-
 		return nil, err
 	}
+	createdTokens["security_code"] = securityCodeToken
 
 	return &secman.LogicalResponse{
 		Status: http.StatusOK,
@@ -79,11 +102,47 @@ func (b *Backend) CreateHandler(ctx *gin.Context, params *secman.LogicalParams) 
 	}, nil
 }
 
-func (b *Backend) processCreatePan(ctx *gin.Context, data *CardData) (string, error) {
+func (b *Backend) validateCardData(data *CardData) error {
 	if data.PAN == "" {
-		return "", errors.Join(secman.ErrLogicalResponse, fmt.Errorf("PAN is required"))
+		return fmt.Errorf("PAN is required")
 	}
 
+	if data.CardholderName == "" {
+		return fmt.Errorf("cardholder name is required")
+	}
+
+	if data.ExpiryDate == "" {
+		return fmt.Errorf("expiry date is required")
+	}
+
+	if _, err := time.Parse(time.RFC3339Nano, data.ExpiryDate); err != nil {
+		return fmt.Errorf("invalid expiry date format, expected RFC3339Nano: %w", err)
+	}
+
+	if data.SecurityCode == "" {
+		return fmt.Errorf("security code is required")
+	}
+
+	return nil
+}
+
+func (b *Backend) cleanupCreatedTokens(ctx *gin.Context, tokens map[string]string) {
+	token := tokens["pan"]
+	// Delete all associated tokens first
+	if cardholderName, ok := tokens["cardholder_name"]; ok {
+		b.repo.Delete(ctx, token+"/cardholder_name/"+cardholderName)
+	}
+	if expiryDate, ok := tokens["expiry_date"]; ok {
+		b.repo.Delete(ctx, token+"/expiry_date/"+expiryDate)
+	}
+	if securityCode, ok := tokens["security_code"]; ok {
+		b.repo.Delete(ctx, token+"/security_code/"+securityCode)
+	}
+	// Delete the PAN token last
+	b.repo.Delete(ctx, token)
+}
+
+func (b *Backend) processCreatePan(ctx *gin.Context, data *CardData) (string, error) {
 	panToken := b.hashToken(data.PAN)
 	_, ok, err := b.repo.ValueOk(ctx, panToken)
 	if err != nil {

@@ -18,6 +18,11 @@ func (b *Backend) DeleteHandler(ctx *gin.Context, params *secman.LogicalParams) 
 		return nil, err
 	}
 
+	err = b.metadata.Delete(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
 		Message: gin.H{},

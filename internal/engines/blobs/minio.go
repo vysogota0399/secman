@@ -50,7 +50,7 @@ func NewMinio(lg *logging.ZapLogger, ba *Backend) (*Minio, error) {
 
 type Blob struct {
 	Key   string
-	Value io.Reader
+	Value io.ReadCloser
 	Size  int64
 }
 
@@ -70,12 +70,26 @@ func (m *Minio) Create(ctx context.Context, blob *Blob) error {
 	return nil
 }
 
-func (m *Minio) Get(ctx context.Context, key string) (string, error) {
-	return "", nil
+func (m *Minio) Get(ctx context.Context, key string) (*Blob, error) {
+	obj, err := m.client.GetObject(ctx, m.bucket, key, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("minio: failed to get object %s %w", key, err)
+	}
+
+	stat, err := obj.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("minio: failed to get object stat %s %w", key, err)
+	}
+
+	return &Blob{
+		Key:   key,
+		Value: obj,
+		Size:  stat.Size,
+	}, nil
 }
 
 func (m *Minio) Delete(ctx context.Context, key string) error {
-	return nil
+	return m.client.RemoveObject(ctx, m.bucket, key, minio.RemoveObjectOptions{})
 }
 
 func (m *Minio) createBucket(ctx context.Context, bucket string) error {

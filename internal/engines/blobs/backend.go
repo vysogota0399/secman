@@ -2,11 +2,14 @@ package blobs
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"math/rand"
 	"net/http"
-	"path"
+	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
@@ -23,6 +26,18 @@ type Backend struct {
 	lg         *logging.ZapLogger
 	blobParams *BlobParams
 	s3         S3
+}
+
+func NewBackend(lg *logging.ZapLogger, blobRepo *Repository, metadataRepo *MetadataRepository) *Backend {
+	exist := &atomic.Bool{}
+	exist.Store(false)
+
+	return &Backend{
+		lg:       lg,
+		repo:     blobRepo,
+		metadata: metadataRepo,
+		exist:    exist,
+	}
 }
 
 const PATH = "/secrets/blobs"
@@ -44,29 +59,29 @@ func (b *Backend) Help() string {
 }
 
 type MetadataBody struct {
-	Data map[string]string `json:"data"`
+	Metadata map[string]string `json:"metadata"`
 }
 
 func (b *Backend) Paths() map[string]map[string]*secman.Path {
 	return map[string]map[string]*secman.Path{
 		http.MethodGet: {
-			PATH + "/:key": {
-				Handler:     nil,
+			PATH + "/:token": {
+				Handler:     b.showBlob,
 				Description: "Get a blob",
 				Fields: []secman.Field{
 					{
-						Name:        "key",
-						Description: "The key of the blob",
+						Name:        "token",
+						Description: "The token of the blob",
 					},
 				},
 			},
-			PATH + "/:key/metadata": {
-				Handler:     nil,
+			PATH + "/:token/metadata": {
+				Handler:     b.showMetadataHandler,
 				Description: "Get the metadata of a blob",
 				Fields: []secman.Field{
 					{
-						Name:        "key",
-						Description: "The key of the blob",
+						Name:        "token",
+						Description: "The token of the blob",
 					},
 				},
 			},
@@ -79,25 +94,25 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 			},
 		},
 		http.MethodDelete: {
-			PATH + "/:key": {
-				Handler:     nil,
+			PATH + "/:token": {
+				Handler:     b.deleteHandler,
 				Description: "Delete a blob",
 				Fields: []secman.Field{
 					{
-						Name:        "key",
-						Description: "The key of the blob",
+						Name:        "token",
+						Description: "The token of the blob",
 					},
 				},
 			},
 		},
 		http.MethodPut: {
-			PATH + "/:key/metadata": {
-				Handler:     nil,
+			PATH + "/:token/metadata": {
+				Handler:     b.updateMetadataHandler,
 				Description: "Update the metadata of a blob",
 				Fields: []secman.Field{
 					{
-						Name:        "key",
-						Description: "The key of the blob",
+						Name:        "token",
+						Description: "The token of the blob",
 					},
 				},
 				Body: func() any { return &MetadataBody{} },
@@ -111,10 +126,10 @@ type BlobParams struct {
 }
 
 type S3Adapter struct {
-	URL      string `json:"url" binding:"required"`
-	User     string `json:"user" binding:"required"`
-	Password string `json:"password" binding:"required"`
-	SSL      bool   `json:"ssl" binding:"required"`
+	URL      string `json:"url"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+	SSL      bool   `json:"ssl"`
 	Bucket   string `json:"bucket"`
 }
 
@@ -132,16 +147,55 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 	blobParams := &BlobParams{}
 
 	if err := req.ShouldBindJSON(blobParams); err != nil {
-		return nil, fmt.Errorf("blobs: enable failed error when binding json %w", err)
+		return &secman.LogicalResponse{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request",
+		}, nil
 	}
+
+	adapter := blobParams.Adapter
+
+	if adapter.URL == "" {
+		return &secman.LogicalResponse{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request, missing required field: url",
+		}, nil
+	}
+
+	if adapter.User == "" {
+		return &secman.LogicalResponse{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request, missing required field: user",
+		}, nil
+	}
+
+	if adapter.Password == "" {
+		return &secman.LogicalResponse{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request, missing required field: password",
+		}, nil
+	}
+
+	if adapter.SSL {
+		return &secman.LogicalResponse{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request, missing required field: ssl",
+		}, nil
+	}
+	blobParams.Adapter.Bucket = strings.ReplaceAll(b.repo.path, "/", "-")
 
 	if err := b.repo.Enable(ctx, blobParams); err != nil {
 		return nil, fmt.Errorf("blobs: enable failed error when enabling %w", err)
 	}
 
-	blobParams.Adapter.Bucket = path.Join(b.repo.path, blobParams.Adapter.Bucket)
 	b.blobParams = blobParams
 
+	s3, err := NewMinio(b.lg, b)
+	if err != nil {
+		return nil, fmt.Errorf("blobs: enable failed error when creating minio client %w", err)
+	}
+
+	b.s3 = s3
 	b.exist.Store(true)
 
 	return &secman.LogicalResponse{
@@ -158,6 +212,7 @@ func (b *Backend) PostUnseal(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("blobs: post unseal failed error when checking if engine is enabled %w", err)
 	}
+	b.blobParams = params
 
 	if !ok {
 		return fmt.Errorf("blobs: post unseal failed error: %w", secman.ErrEngineIsNotEnabled)
@@ -170,8 +225,17 @@ func (b *Backend) PostUnseal(ctx context.Context) error {
 
 	b.s3 = s3
 
-	b.blobParams = params
 	b.exist.Store(true)
 
 	return nil
+}
+
+func (b *Backend) rndToken() string {
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	bytes := make([]byte, 64)
+	rnd.Read(bytes)
+
+	res := base64.StdEncoding.EncodeToString(bytes)
+
+	return strings.ReplaceAll(res, "/", "_")
 }

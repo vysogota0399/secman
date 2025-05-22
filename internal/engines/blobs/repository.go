@@ -56,13 +56,29 @@ func (r *Repository) Enable(ctx context.Context, params *BlobParams) error {
 	return nil
 }
 
-func (r *Repository) CreateBlob(ctx context.Context, key string) error {
+func (r *Repository) CreateBlob(ctx context.Context, key string, value string) error {
 	secretPath := path.Join(r.path, key)
 	if err := r.barrier.Update(ctx, secretPath, secman.Entry{
-		Path: secretPath,
+		Path:  secretPath,
+		Value: value,
 	}, 0); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (r *Repository) Delete(ctx context.Context, key string) error {
+	secretPath := path.Join(r.path, key)
+	return r.barrier.Delete(ctx, secretPath)
+}
+
+func (r *Repository) GetBlobKeyOk(ctx context.Context, key string) (string, bool, error) {
+	secretPath := path.Join(r.path, key)
+	entry, ok, err := r.barrier.GetOk(ctx, secretPath)
+	if err != nil {
+		return "", false, err
+	}
+
+	return entry.Value, ok, nil
 }

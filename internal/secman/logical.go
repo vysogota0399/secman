@@ -3,6 +3,7 @@ package secman
 import (
 	"context"
 	"errors"
+	"io"
 
 	"github.com/gin-gonic/gin"
 )
@@ -63,8 +64,11 @@ type Path struct {
 // Message is the message of the response,
 // Data is the data of the response
 type LogicalResponse struct {
-	Status  int `json:"status"`
-	Message any `json:"message"`
+	Status      int               `json:"status"`
+	Message     any               `json:"message"`
+	Headers     map[string]string `json:"headers"`
+	Reader      io.ReadCloser     `json:"-"`
+	ContentSize int64             `json:"-"`
 }
 type LogicalRequest struct {
 	*gin.Context

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,19 +20,21 @@ import (
 var _ secman.LogicalBackend = &Backend{}
 
 type Backend struct {
-	beMtx  sync.RWMutex
-	exist  *atomic.Bool
-	router *secman.BackendRouter
-	repo   *Repository
-	lg     *logging.ZapLogger
+	beMtx    sync.RWMutex
+	exist    *atomic.Bool
+	router   *secman.BackendRouter
+	repo     *Repository
+	metadata *MetadataRepository
+	lg       *logging.ZapLogger
 }
 
-func NewBackend(lg *logging.ZapLogger, repo *Repository) *Backend {
+func NewBackend(lg *logging.ZapLogger, repo *Repository, metadata *MetadataRepository) *Backend {
 	return &Backend{
-		lg:    lg,
-		repo:  repo,
-		exist: &atomic.Bool{},
-		beMtx: sync.RWMutex{},
+		lg:       lg,
+		repo:     repo,
+		metadata: metadata,
+		exist:    &atomic.Bool{},
+		beMtx:    sync.RWMutex{},
 	}
 }
 
@@ -70,15 +73,15 @@ type CreateCardBody struct {
 	CardData CardData `json:"card_data"`
 }
 
-type ParamsBody struct {
+type MetadataBody struct {
 	Metadata map[string]string `json:"metadata"`
 }
 
 func (b *Backend) Paths() map[string]map[string]*secman.Path {
 	return map[string]map[string]*secman.Path{
 		http.MethodGet: {
-			PATH + "/:token/params": {
-				Handler:     b.ShowParamsHandler,
+			PATH + "/:token/metadata": {
+				Handler:     b.ShowMetadataHandler,
 				Description: "Get the metadata of a card",
 				Fields: []secman.Field{
 					{
@@ -168,10 +171,10 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 			},
 		},
 		http.MethodPut: {
-			PATH + "/:card_token/params": {
-				Handler:     b.UpdateParamsHandler,
+			PATH + "/:card_token/metadata": {
+				Handler:     b.UpdateMetadataHandler,
 				Description: "Update a card metadata",
-				Body:        func() any { return &ParamsBody{} },
+				Body:        func() any { return &MetadataBody{} },
 				Fields: []secman.Field{
 					{
 						Name:        "card_token",
@@ -235,5 +238,7 @@ func (b *Backend) rndToken() string {
 	bytes := make([]byte, 64)
 	rnd.Read(bytes)
 
-	return base64.StdEncoding.EncodeToString(bytes)
+	res := base64.StdEncoding.EncodeToString(bytes)
+
+	return strings.ReplaceAll(res, "/", "_")
 }

@@ -16,6 +16,10 @@ func (b *Backend) createHandler(ctx *gin.Context, params *secman.LogicalParams) 
 		return nil, fmt.Errorf("type cast error got %T, expected pointer", params.Body)
 	}
 
+	if metadata.Metadata == nil {
+		metadata.Metadata = make(map[string]string)
+	}
+
 	data, err := ctx.FormFile("file")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get file from form data %w", err)
@@ -26,8 +30,11 @@ func (b *Backend) createHandler(ctx *gin.Context, params *secman.LogicalParams) 
 		return nil, fmt.Errorf("failed to open file %w", err)
 	}
 
-	metadata.Data["created_at"] = time.Now().Format(time.RFC3339Nano)
+	metadata.Metadata["created_at"] = time.Now().Format(time.RFC3339Nano)
+	metadata.Metadata["file_name"] = data.Filename
+
 	fileUUID := uuid.New().String()
+	fileToken := b.rndToken()
 
 	blob := &Blob{
 		Key:   fileUUID,
@@ -39,18 +46,18 @@ func (b *Backend) createHandler(ctx *gin.Context, params *secman.LogicalParams) 
 		return nil, fmt.Errorf("failed to create blob %w", err)
 	}
 
-	if err := b.repo.CreateBlob(ctx, blob.Key); err != nil {
+	if err := b.repo.CreateBlob(ctx, fileToken, blob.Key); err != nil {
 		return nil, fmt.Errorf("failed to save blob secret %w", err)
 	}
 
-	if err := b.metadata.Update(ctx, blob.Key, metadata.Data); err != nil {
+	if err := b.metadata.Update(ctx, fileToken, metadata.Metadata); err != nil {
 		return nil, fmt.Errorf("failed to save metadata %w", err)
 	}
 
 	return &secman.LogicalResponse{
 		Status: http.StatusOK,
 		Message: gin.H{
-			"key": blob.Key,
+			"token": fileToken,
 		},
 	}, nil
 }

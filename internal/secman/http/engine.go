@@ -32,6 +32,24 @@ func (h *Engine) Handler() func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(resp.Status, resp.Message)
+		if resp.Reader != nil {
+			defer resp.Reader.Close()
+		}
+
+		for k, v := range resp.Headers {
+			c.Header(k, v)
+		}
+
+		if resp.Headers["Content-Type"] == "application/json" || resp.Headers["Content-Type"] == "" {
+			c.JSON(resp.Status, resp.Message)
+			return
+		}
+
+		if resp.Headers["Content-Type"] == "application/octet-stream" {
+			c.DataFromReader(resp.Status, resp.ContentSize, resp.Headers["Content-Type"], resp.Reader, nil)
+			return
+		}
+
+		c.Status(resp.Status)
 	}
 }

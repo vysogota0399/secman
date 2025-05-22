@@ -1,8 +1,8 @@
 version: '3'
 
 env:
-  ROOT_TOKEN: "I5gVSOrW5Fb4G+2iRMcFkj3+cSuWrBB+foUcXZzGhkI="
-  JWT_TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzeXMvdXNlcnMvdXNlcjEiLCJleHAiOjIwNjMyMDEwMDUsImlhdCI6MTc0Nzg0MTAwNSwiU2lkIjoiOWI0MTlhOWItZjlhNS00OTQ5LThkMGQtZTMyNTY4ZDM3ZjQ2In0.lj3W5DyXEslgxTmDuli0nj3hXmKaxV7FmwUeqV44uuI'
+  ROOT_TOKEN: "v26+moV9ccuHQHNiAXjSMRaACKV1pE0EHHqZFBEB+rk="
+  JWT_TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzeXMvdXNlcnMvIiwiZXhwIjoyMDYzMjgyMTMzLCJpYXQiOjE3NDc5MjIxMzMsIlNpZCI6ImJmYTlhYzEyLWFjZTEtNDhmMC04YTI2LTEyZTgwZmIwNTA0YyJ9.7sqVKklcUQPvx1QWz4Za_b7OTSDGarjgYWqTDKSVy1o'
 
 tasks:
   status:
@@ -61,7 +61,7 @@ tasks:
 
   create-secret:
     cmds:
-      - 'curl -v -X POST -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/kv -d "{\"key\": \"test\", \"value\": \"test\"}" | jq'
+      - 'curl -v -X POST -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: application/json" http://127.0.0.1:8080/api/engine/secrets/kv -d "{\"key\": \"test\", \"value\": \"test\"}" | jq'
 
   get-secret:
     cmds:
@@ -73,9 +73,38 @@ tasks:
 
   update-secret-params:
     cmds:
-      - 'curl -v -X PUT -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/kv/test/params -d "{\"metadata\": {\"lorem\": \"ipsum\"}}" | jq'
+      - 'curl -v -X PUT -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: application/json" http://127.0.0.1:8080/api/engine/secrets/kv/test/params -d "{\"metadata\": {\"lorem\": \"ipsum\"}}" | jq'
 
   create-card:
     cmds:
-      - 'curl -v -X POST -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/pci_dss -d "{\"card_data\": {\"pan\": \"1234567890123458\", \"cardholder_name\": \"John Doe\", \"expiry_date\": \"2025-01-01T00:00:00Z\"}}" | jq'
-  
+      - 'curl -v -X POST -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: application/json" http://127.0.0.1:8080/api/engine/secrets/pci_dss -d "{\"card_data\": {\"pan\": \"1234567890123458\", \"cardholder_name\": \"John Doe\", \"expiry_date\": \"2025-01-01T00:00:00Z\"}}" | jq'
+
+  delete-card:
+    cmds:
+      - 'curl -v -X DELETE -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/pci_dss/2c028569da61ac7239fc1b1bd59f12052b3b478f1bf53ec6a098edd6ad61211e| jq'
+
+  enable-blob:
+    cmds:
+      - 'curl -v -X POST -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: application/json" http://127.0.0.1:8080/api/sys/engines/enable/secrets/blobs -d "{\"adapter\": {\"url\": \"127.0.0.1:9000\", \"user\": \"minio\", \"password\": \"minio123\", \"ssl\": false}}" | jq'
+
+  create-blob:
+    cmds:
+      - echo "test" > testfile.txt
+      - 'curl -v -X POST -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: multipart/form-data" http://127.0.0.1:8080/api/engine/secrets/blobs -F "file=@testfile.txt" -F "metadata[lorem]=ipsum" | jq'
+      - rm testfile.txt
+
+  delete-blob:
+    cmds:
+      - 'curl -v -X DELETE -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/blobs/2r2bioCZYxRDaWbOjHPNIbVkVIVWfoBfy8YXLpfJAKvfRVpxZztSUSqwcjZeGHySD2xHvXWZBJfj4Aok8cmSxg==| jq'
+
+  show-blob:
+    cmds:
+      - 'curl -v -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/blobs/OOW6tcD8B5D1SxVfwyoKKqkM1IiLfFSLWW9yPmQSsbULOXJAmIGoaPCw1cW8582+j7VDwrEcx5kOpf1KqCKnVg=='
+
+  show-blob-metadata:
+    cmds:
+      - 'curl -v -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/blobs/OOW6tcD8B5D1SxVfwyoKKqkM1IiLfFSLWW9yPmQSsbULOXJAmIGoaPCw1cW8582+j7VDwrEcx5kOpf1KqCKnVg==/metadata | jq'
+
+  update-blob-metadata:
+    cmds:
+      - 'curl -v -X PUT -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: application/json" http://127.0.0.1:8080/api/engine/secrets/blobs/OOW6tcD8B5D1SxVfwyoKKqkM1IiLfFSLWW9yPmQSsbULOXJAmIGoaPCw1cW8582+j7VDwrEcx5kOpf1KqCKnVg==/metadata -d "{\"metadata\": {\"lorem\": \"ipsum\"}}" | jq'

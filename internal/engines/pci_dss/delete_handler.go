@@ -12,7 +12,7 @@ func (b *Backend) DeleteHandler(ctx *gin.Context, params *secman.LogicalParams) 
 	b.beMtx.Lock()
 	defer b.beMtx.Unlock()
 
-	cardToken := ctx.Param("card_token")
+	cardToken := params.Params["card_token"]
 
 	paths, err := b.repo.List(ctx, cardToken)
 	if err != nil {
@@ -26,6 +26,6 @@ func (b *Backend) DeleteHandler(ctx *gin.Context, params *secman.LogicalParams) 
 	}
 
 	return &secman.LogicalResponse{
-		Status: http.StatusOK,
+		Status: http.StatusNoContent,
 	}, nil
 }

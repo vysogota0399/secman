@@ -12,8 +12,8 @@ func (b *Backend) ShowSecurityCodeHandler(ctx *gin.Context, params *secman.Logic
 	b.beMtx.RLock()
 	defer b.beMtx.RUnlock()
 
-	cardToken := ctx.Param("card_token")
-	securityCodeToken := ctx.Param("security_code_token")
+	cardToken := params.Params["card_token"]
+	securityCodeToken := params.Params["security_code_token"]
 
 	securityCode, ok, err := b.repo.ValueOk(ctx, cardToken+"/security_code/"+securityCodeToken)
 	if err != nil {
