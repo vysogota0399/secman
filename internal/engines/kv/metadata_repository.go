@@ -9,12 +9,12 @@ import (
 )
 
 type MetadataRepository struct {
-	storage secman.IStorage
+	storage secman.BarrierStorage
 	postfix string
 	prefix  string
 }
 
-func NewMetadataRepository(storage secman.IStorage) *MetadataRepository {
+func NewMetadataRepository(storage secman.BarrierStorage) *MetadataRepository {
 	return &MetadataRepository{storage: storage, postfix: "metadata", prefix: "secrets/pci_dss"}
 }
 
@@ -25,7 +25,7 @@ func (r *MetadataRepository) Get(ctx context.Context, path string) (map[string]s
 	}
 
 	var metadata map[string]string
-	if err := json.Unmarshal(entry.Value, &metadata); err != nil {
+	if err := json.Unmarshal([]byte(entry.Value), &metadata); err != nil {
 		return nil, err
 	}
 
@@ -51,7 +51,7 @@ func (r *MetadataRepository) Update(ctx context.Context, key string, value map[s
 		return err
 	}
 
-	return r.storage.Update(ctx, r.path(key), secman.PhysicalEntry{Value: jsonValue}, 0)
+	return r.storage.Update(ctx, r.path(key), secman.Entry{Value: string(jsonValue)}, 0)
 }
 
 func (r *MetadataRepository) Delete(ctx context.Context, key string) error {

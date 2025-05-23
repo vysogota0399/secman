@@ -16,13 +16,13 @@ func NewRootToken(tokensRepository *TokensRepository) *RootToken {
 	return &RootToken{tokensRepository: tokensRepository}
 }
 
-func (rt *RootToken) Gen(ctx context.Context, path string) (string, error) {
+func (rt *RootToken) Gen(ctx context.Context, key string) (string, error) {
 	token := Token{}
 	if err := token.init(); err != nil {
 		return "", err
 	}
 
-	token.Path = path
+	token.Key = key
 	plainToken := token.Value
 
 	const hashCost = 10

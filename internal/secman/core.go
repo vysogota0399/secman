@@ -52,10 +52,10 @@ type Core struct {
 }
 
 func NewCore(
+	barrier IBarrier,
 	lc fx.Lifecycle,
 	log *logging.ZapLogger,
 	config *config.Config,
-	barrier IBarrier,
 	storage IStorage,
 	coreRepository *CoreRepository,
 	rootTokens IRootTokens,

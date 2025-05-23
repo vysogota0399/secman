@@ -13,14 +13,10 @@ type Repository struct {
 	storage secman.ILogicalStorage
 }
 
-func NewLogicalStorage(b secman.IBarrier) secman.ILogicalStorage {
-	return secman.NewLogicalStorage(b, "secrets/blobs")
-}
-
-func NewRepository(lg *logging.ZapLogger, storage secman.ILogicalStorage) *Repository {
+func NewRepository(b secman.BarrierStorage, lg *logging.ZapLogger) *Repository {
 	return &Repository{
 		lg:      lg,
-		storage: storage,
+		storage: secman.NewLogicalStorage(b, "secrets/blobs"),
 	}
 }
 

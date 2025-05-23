@@ -141,7 +141,7 @@ func (r *Router) AbortIfNotInitialized(c *gin.Context) {
 func (r *Router) Authorize(c *gin.Context) {
 	token := c.GetHeader("X-Secman-Token")
 	if token != "" {
-		err := r.core.RootTokens.Compare(c.Request.Context(), secman.RootTokenPath, token)
+		err := r.core.RootTokens.Compare(c.Request.Context(), secman.RootTokenKey, token)
 		if err != nil {
 			r.core.Log.DebugCtx(c.Request.Context(), "authorize failed", zap.String("error", err.Error()))
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})

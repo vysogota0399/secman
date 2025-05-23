@@ -41,7 +41,7 @@ func (h *Init) Handler() func(c *gin.Context) {
 			return
 		}
 
-		rootToken, err := h.core.RootTokens.Gen(c.Request.Context(), secman.RootTokenPath)
+		rootToken, err := h.core.RootTokens.Gen(c.Request.Context(), secman.RootTokenKey)
 		if err != nil {
 			h.log.ErrorCtx(c.Request.Context(), "init root token failed", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "init root token failed, see logs for more details"})

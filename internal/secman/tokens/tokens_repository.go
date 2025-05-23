@@ -10,7 +10,7 @@ import (
 
 type Token struct {
 	Value []byte `json:"value"`
-	Path  string `json:"path"`
+	Key   string `json:"key"`
 }
 
 func (t *Token) init() error {
@@ -27,21 +27,25 @@ func (t *Token) init() error {
 }
 
 type TokensRepository struct {
-	storage secman.IStorage
+	storage secman.ILogicalStorage
 }
 
-func NewTokensRepository(storage secman.IStorage) *TokensRepository {
-	return &TokensRepository{storage: storage}
+func NewLogicalStorage(storage secman.BarrierStorage) secman.ILogicalStorage {
+	return secman.NewLogicalStorage(storage, "sys/tokens")
 }
 
-func (r *TokensRepository) Find(ctx context.Context, path string) (Token, error) {
-	entry, err := r.storage.Get(ctx, path)
+func NewTokensRepository(barrier secman.BarrierStorage) *TokensRepository {
+	return &TokensRepository{storage: NewLogicalStorage(barrier)}
+}
+
+func (r *TokensRepository) Find(ctx context.Context, key string) (Token, error) {
+	entry, err := r.storage.Get(ctx, key)
 	if err != nil {
 		return Token{}, err
 	}
 
 	var token Token
-	if err := json.Unmarshal(entry.Value, &token); err != nil {
+	if err := json.Unmarshal([]byte(entry.Value), &token); err != nil {
 		return Token{}, err
 	}
 
@@ -54,5 +58,5 @@ func (r *TokensRepository) Create(ctx context.Context, token Token) error {
 		return err
 	}
 
-	return r.storage.Update(ctx, token.Path, secman.PhysicalEntry{Value: bts}, 0)
+	return r.storage.Update(ctx, token.Key, secman.Entry{Value: string(bts), Key: token.Key}, 0)
 }

@@ -11,7 +11,7 @@ import (
 type IBarrier interface {
 	BarrierStorage
 	// Init initializes the barrier with root key
-	Init(ctx context.Context) (error, IKey)
+	Init(ctx context.Context) ([]byte, error)
 	Unseal(ctx context.Context, key []byte) error
 }
 
@@ -26,9 +26,4 @@ type BarrierStorage interface {
 type Entry struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
-}
-
-type IKey interface {
-	Seal(data []byte) ([]byte, error)
-	Unseal(data []byte) ([]byte, error)
 }

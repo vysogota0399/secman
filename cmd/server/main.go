@@ -9,6 +9,7 @@ import (
 	"github.com/vysogota0399/secman/internal/engines/logopass"
 	logopass_repositories "github.com/vysogota0399/secman/internal/engines/logopass/repositories"
 	"github.com/vysogota0399/secman/internal/engines/pci_dss"
+
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
 	"github.com/vysogota0399/secman/internal/secman/bariers"
@@ -40,22 +41,40 @@ func CreateApp() fx.Option {
 			logging.MustZapLogger,
 			fx.Annotate(config.NewConfig, fx.As(new(logging.LogLevelFetcher))),
 
-			// engines
-			AsBackend(logopass.NewBackend),
+			// core
+			fx.Annotate(secman.NewCore),
+			fx.Annotate(secman.NewCoreRepository, fx.ParamTags(`name:"unsealed_barrier"`)),
+			fx.Annotate(storages.NewStorage,
+				fx.As(new(secman.IStorage)),
+			),
+			fx.Annotate(secman.NewLogicalRouter, fx.ParamTags(`group:"backends"`)),
+			fx.Annotate(bariers.NewUnsealedBarrier, fx.As(new(secman.BarrierStorage)), fx.ResultTags(`name:"unsealed_barrier"`)),
+			fx.Annotate(bariers.NewAes256Barier, fx.As(new(secman.IBarrier)), fx.As(new(secman.BarrierStorage))),
+			secman.NewAuth,
+			secman.NewKeyring,
+
+			//--> engines
+			// blobs
+			fx.Annotate(blobs.NewBackend, fx.As(new(secman.LogicalBackend)), fx.ResultTags(`group:"backends"`)),
+			fx.Annotate(blobs.NewRepository),
+			fx.Annotate(blobs.NewMetadataRepository, fx.ParamTags(`name:"unsealed_barrier"`)),
+
+			// logopass
 			logopass.NewLogopass,
+			fx.Annotate(logopass.NewBackend, fx.As(new(secman.LogicalBackend)), fx.ResultTags(`group:"backends"`)),
 			fx.Annotate(logopass_repositories.NewParamsRepository, fx.As(new(logopass.ParamsRepository))),
 
-			AsBackend(kv.NewBackend),
-			kv.NewRepository,
-			kv.NewMetadataRepository,
+			// kv
+			fx.Annotate(kv.NewBackend, fx.As(new(secman.LogicalBackend)), fx.ResultTags(`group:"backends"`)),
+			fx.Annotate(kv.NewRepository),
+			fx.Annotate(kv.NewMetadataRepository, fx.ParamTags(`name:"unsealed_barrier"`)),
 
-			AsBackend(pci_dss.NewBackend),
-			pci_dss.NewRepository,
-			pci_dss.NewMetadataRepository,
+			// pci_dss
+			fx.Annotate(pci_dss.NewBackend, fx.As(new(secman.LogicalBackend)), fx.ResultTags(`group:"backends"`)),
+			fx.Annotate(pci_dss.NewRepository),
+			fx.Annotate(pci_dss.NewMetadataRepository, fx.ParamTags(`name:"unsealed_barrier"`)),
 
-			AsBackend(blobs.NewBackend),
-			blobs.NewRepository,
-			blobs.NewMetadataRepository,
+			//<-- engines
 
 			// iam
 			fx.Annotate(iam_repositories.NewSessions, fx.As(new(iam.SessionsRepository))),
@@ -65,19 +84,8 @@ func CreateApp() fx.Option {
 			),
 
 			// tokens
-			tokens.NewTokensRepository,
 			fx.Annotate(tokens.NewRootToken, fx.As(new(secman.IRootTokens))),
-
-			// core
-			fx.Annotate(secman.NewCore),
-			secman.NewCoreRepository,
-			fx.Annotate(storages.NewStorage,
-				fx.As(new(secman.IStorage)),
-			),
-			fx.Annotate(secman.NewLogicalRouter, fx.ParamTags(`group:"backends"`)),
-			fx.Annotate(bariers.NewDummyBarrier, fx.As(new(secman.IBarrier))),
-			secman.NewAuth,
-			secman.NewKeyring,
+			fx.Annotate(tokens.NewTokensRepository, fx.ParamTags(`name:"unsealed_barrier"`)),
 
 			// http
 			http.NewRouter,

@@ -10,11 +10,11 @@ import (
 )
 
 type CoreRepository struct {
-	storage IStorage
+	storage BarrierStorage
 	log     *logging.ZapLogger
 }
 
-func NewCoreRepository(storage IStorage, log *logging.ZapLogger) *CoreRepository {
+func NewCoreRepository(storage BarrierStorage, log *logging.ZapLogger) *CoreRepository {
 	return &CoreRepository{storage: storage, log: log}
 }
 
@@ -52,13 +52,14 @@ func (r *CoreRepository) SetCoreInitialized(ctx context.Context, initialized boo
 func (r *CoreRepository) entry(ctx context.Context) (CoreEntry, error) {
 	var coreParams CoreEntry
 	core, err := r.storage.Get(ctx, coreParamsPath)
+
 	if err != nil {
 		return CoreEntry{}, err
 	}
 
-	err = json.Unmarshal(core.Value, &coreParams)
+	err = json.Unmarshal([]byte(core.Value), &coreParams)
 	if err != nil {
-		return CoreEntry{}, fmt.Errorf("core repository: failed to unmarshal core params %s: %w", string(core.Value), err)
+		return CoreEntry{}, fmt.Errorf("core repository: failed to unmarshal core params %s: %w", core.Value, err)
 	}
 
 	return coreParams, nil
@@ -70,7 +71,7 @@ func (r *CoreRepository) updateEntry(ctx context.Context, entry CoreEntry) error
 		return fmt.Errorf("core repository: failed to marshal core params %s: %w", string(value), err)
 	}
 
-	return r.storage.Update(ctx, coreParamsPath, PhysicalEntry{Value: value}, 0)
+	return r.storage.Update(ctx, coreParamsPath, Entry{Value: string(value)}, 0)
 }
 
 // IsEngineExist checks if the engine exists in the storage.
@@ -99,7 +100,7 @@ func (r *CoreRepository) GetCoreAuthConfig(ctx context.Context) (*Auth, error) {
 	}
 
 	var authConfig Auth
-	err = json.Unmarshal(entry.Value, &authConfig)
+	err = json.Unmarshal([]byte(entry.Value), &authConfig)
 	if err != nil {
 		return nil, fmt.Errorf("core repository: failed to unmarshal core config %s: %w", string(entry.Value), err)
 	}
@@ -113,5 +114,5 @@ func (r *CoreRepository) UpdateCoreAuthConfig(ctx context.Context, authConfig *A
 		return fmt.Errorf("core repository: failed to marshal core config %s: %w", string(value), err)
 	}
 
-	return r.storage.Update(ctx, coreAuthPath, PhysicalEntry{Value: value}, 0)
+	return r.storage.Update(ctx, coreAuthPath, Entry{Value: string(value)}, 0)
 }

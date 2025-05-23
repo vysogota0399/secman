@@ -2,7 +2,6 @@ package bariers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -25,12 +24,7 @@ func (b *UnsealedBarrier) Delete(ctx context.Context, path string) error {
 }
 
 func (b *UnsealedBarrier) Update(ctx context.Context, path string, entry secman.Entry, ttl time.Duration) error {
-	value, err := json.Marshal(entry)
-	if err != nil {
-		return fmt.Errorf("meta barrier: failed to marshal entry: %w", err)
-	}
-
-	return b.storage.Update(ctx, path, secman.PhysicalEntry{Value: value}, ttl)
+	return b.storage.Update(ctx, path, secman.PhysicalEntry{Value: []byte(entry.Value)}, ttl)
 }
 
 func (b *UnsealedBarrier) Get(ctx context.Context, path string) (secman.Entry, error) {
@@ -39,13 +33,7 @@ func (b *UnsealedBarrier) Get(ctx context.Context, path string) (secman.Entry, e
 		return secman.Entry{}, fmt.Errorf("meta barrier: get key %s failed error: %w", path, err)
 	}
 
-	entry := secman.Entry{}
-	err = json.Unmarshal(res.Value, &entry)
-	if err != nil {
-		return secman.Entry{}, fmt.Errorf("meta barrier: key %s, value %s is not a valid entry: %w", path, string(res.Value), err)
-	}
-
-	return entry, nil
+	return secman.Entry{Value: string(res.Value), Key: res.Key}, nil
 }
 
 func (b *UnsealedBarrier) GetOk(ctx context.Context, path string) (secman.Entry, bool, error) {
@@ -69,13 +57,7 @@ func (b *UnsealedBarrier) List(ctx context.Context, path string) ([]secman.Entry
 
 	entries := make([]secman.Entry, len(physicalEntries))
 	for i, pe := range physicalEntries {
-		entry := secman.Entry{}
-		err = json.Unmarshal(pe.Value, &entry)
-		if err != nil {
-			return nil, fmt.Errorf("meta barrier: key %s, value %s is not a valid entry: %w", pe.Key, string(pe.Value), err)
-		}
-
-		entries[i] = entry
+		entries[i] = secman.Entry{Value: string(pe.Value), Key: pe.Key}
 	}
 
 	return entries, nil

@@ -12,6 +12,7 @@ type ILogicalStorage interface {
 	Update(ctx context.Context, path string, value Entry, ttl time.Duration) error
 	Delete(ctx context.Context, path string) error
 	List(ctx context.Context, path string) ([]Entry, error)
+	Prefix() string
 }
 
 type LogicalStorage struct {
@@ -19,9 +20,13 @@ type LogicalStorage struct {
 	prefix string
 }
 
+func (s *LogicalStorage) Prefix() string {
+	return s.prefix
+}
+
 var _ ILogicalStorage = &LogicalStorage{}
 
-func NewLogicalStorage(b IBarrier, path string) *LogicalStorage {
+func NewLogicalStorage(b BarrierStorage, path string) *LogicalStorage {
 	return &LogicalStorage{b: b, prefix: path}
 }
 

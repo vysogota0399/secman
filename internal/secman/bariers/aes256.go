@@ -2,7 +2,6 @@ package bariers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sync/atomic"
@@ -16,12 +15,11 @@ type Aes256Barier struct {
 	storage secman.IStorage
 	log     *logging.ZapLogger
 	sealed  *atomic.Bool
-	key     secman.IKey
 }
 
 var _ secman.IBarrier = &Aes256Barier{}
 
-func NewAes256Barier(storage secman.IStorage, log *logging.ZapLogger, key secman.IKey) *Aes256Barier {
+func NewAes256Barier(storage secman.IStorage, log *logging.ZapLogger) *Aes256Barier {
 	sealed := &atomic.Bool{}
 	sealed.Store(true)
 
@@ -54,12 +52,7 @@ func (b *Aes256Barier) Update(ctx context.Context, path string, entry secman.Ent
 		return errors.New("barrier is sealed")
 	}
 
-	value, err := json.Marshal(entry)
-	if err != nil {
-		return fmt.Errorf("dummy barrier: failed to marshal entry: %w", err)
-	}
-
-	return b.storage.Update(ctx, path, secman.PhysicalEntry{Value: value}, ttl)
+	return b.storage.Update(ctx, path, secman.PhysicalEntry{Value: []byte(entry.Value)}, ttl)
 }
 
 func (b *Aes256Barier) Get(ctx context.Context, path string) (secman.Entry, error) {
@@ -72,13 +65,7 @@ func (b *Aes256Barier) Get(ctx context.Context, path string) (secman.Entry, erro
 		return secman.Entry{}, fmt.Errorf("dummy barrier: get key %s failed error: %w", path, err)
 	}
 
-	entry := secman.Entry{}
-	err = json.Unmarshal(res.Value, &entry)
-	if err != nil {
-		return secman.Entry{}, fmt.Errorf("dummy barrier: key %s, value %s is not a valid entry: %w", path, string(res.Value), err)
-	}
-
-	return entry, nil
+	return secman.Entry{Value: string(res.Value), Key: res.Key}, nil
 }
 
 func (b *Aes256Barier) GetOk(ctx context.Context, path string) (secman.Entry, bool, error) {
@@ -106,13 +93,7 @@ func (b *Aes256Barier) List(ctx context.Context, path string) ([]secman.Entry, e
 
 	entries := make([]secman.Entry, len(physicalEntries))
 	for i, pe := range physicalEntries {
-		entry := secman.Entry{}
-		err = json.Unmarshal(pe.Value, &entry)
-		if err != nil {
-			return nil, fmt.Errorf("dummy barrier: key %s, value %s is not a valid entry: %w", pe.Key, string(pe.Value), err)
-		}
-
-		entries[i] = entry
+		entries[i] = secman.Entry{Value: string(pe.Value), Key: pe.Key}
 	}
 
 	return entries, nil
@@ -122,6 +103,6 @@ func (b *Aes256Barier) isSealed() bool {
 	return b.sealed.Load()
 }
 
-func (b *Aes256Barier) Init(ctx context.Context) (error, secman.IKey) {
+func (b *Aes256Barier) Init(ctx context.Context) ([]byte, error) {
 	return nil, nil
 }

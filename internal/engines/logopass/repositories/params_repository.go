@@ -20,12 +20,11 @@ type ParamsRepository struct {
 	storage secman.ILogicalStorage
 }
 
-func NewLogicalStorage(b secman.IBarrier) secman.ILogicalStorage {
-	return secman.NewLogicalStorage(b, "auth/logopass")
-}
-
-func NewParamsRepository(lg *logging.ZapLogger, storage secman.ILogicalStorage) *ParamsRepository {
-	return &ParamsRepository{lg: lg, storage: storage}
+func NewParamsRepository(b secman.BarrierStorage, lg *logging.ZapLogger) *ParamsRepository {
+	return &ParamsRepository{
+		lg:      lg,
+		storage: secman.NewLogicalStorage(b, "auth/logopass"),
+	}
 }
 
 func (r *ParamsRepository) IsExist(ctx context.Context) (bool, error) {

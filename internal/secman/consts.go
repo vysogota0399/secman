@@ -1,7 +1,7 @@
 package secman
 
 const (
-	RootTokenPath  = "sys/tokens/auth/root"
+	RootTokenKey  = "auth/root"
 	coreParamsPath = "sys/core"
 	coreAuthPath   = "sys/core/auth"
 )
