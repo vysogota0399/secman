@@ -9,20 +9,22 @@ import (
 
 type Repository struct {
 	lg      *logging.ZapLogger
-	barrier secman.IBarrier
-	path    string
+	storage secman.ILogicalStorage
 }
 
-func NewRepository(lg *logging.ZapLogger, barrier secman.IBarrier) *Repository {
+func NewLogicalStorage(b secman.IBarrier) secman.ILogicalStorage {
+	return secman.NewLogicalStorage(b, "secrets/pci_dss")
+}
+
+func NewRepository(lg *logging.ZapLogger, storage secman.ILogicalStorage) *Repository {
 	return &Repository{
 		lg:      lg,
-		barrier: barrier,
-		path:    "secrets/pci_dss",
+		storage: storage,
 	}
 }
 
 func (r *Repository) ValueOk(ctx context.Context, key string) (string, bool, error) {
-	entry, ok, err := r.barrier.GetOk(ctx, r.path+"/"+key)
+	entry, ok, err := r.storage.GetOk(ctx, key)
 	if err != nil {
 		return "", false, err
 	}
@@ -30,10 +32,7 @@ func (r *Repository) ValueOk(ctx context.Context, key string) (string, bool, err
 }
 
 func (r *Repository) Create(ctx context.Context, key string, value string) error {
-	if err := r.barrier.Update(ctx, r.path+"/"+key, secman.Entry{
-		Path:  r.path + "/" + key,
-		Value: value,
-	}, 0); err != nil {
+	if err := r.storage.Update(ctx, key, secman.Entry{Value: value, Key: key}, 0); err != nil {
 		return err
 	}
 
@@ -42,7 +41,7 @@ func (r *Repository) Create(ctx context.Context, key string, value string) error
 
 func (r *Repository) Delete(ctx context.Context, keys ...string) error {
 	for _, key := range keys {
-		if err := r.barrier.Delete(ctx, key); err != nil {
+		if err := r.storage.Delete(ctx, key); err != nil {
 			return err
 		}
 	}
@@ -51,7 +50,7 @@ func (r *Repository) Delete(ctx context.Context, keys ...string) error {
 }
 
 func (r *Repository) IsExist(ctx context.Context) (bool, error) {
-	_, ok, err := r.barrier.GetOk(ctx, r.path)
+	_, ok, err := r.storage.GetOk(ctx, "")
 	if err != nil {
 		return false, err
 	}
@@ -60,10 +59,7 @@ func (r *Repository) IsExist(ctx context.Context) (bool, error) {
 }
 
 func (r *Repository) Enable(ctx context.Context) error {
-	if err := r.barrier.Update(ctx, r.path, secman.Entry{
-		Path:  r.path,
-		Value: "",
-	}, 0); err != nil {
+	if err := r.storage.Update(ctx, "", secman.Entry{}, 0); err != nil {
 		return err
 	}
 
@@ -71,7 +67,7 @@ func (r *Repository) Enable(ctx context.Context) error {
 }
 
 func (r *Repository) List(ctx context.Context, key string) ([]secman.Entry, error) {
-	entries, err := r.barrier.List(ctx, r.path+"/"+key)
+	entries, err := r.storage.List(ctx, key)
 	if err != nil {
 		return nil, err
 	}

@@ -37,17 +37,17 @@ type IRootTokens interface {
 }
 
 type Core struct {
-	IsInitialized  *atomic.Bool
-	sealedMtx      sync.RWMutex
-	IsSealed       *atomic.Bool
-	initMtx        sync.RWMutex
-	Log            *logging.ZapLogger
-	LogicalStorage IBarrier
-	Parent         *Core
-	Config         *config.Config
-	RootTokens     IRootTokens
-	Router         *LogicalRouter
-	Auth           *Auth
+	IsInitialized *atomic.Bool
+	sealedMtx     sync.RWMutex
+	IsSealed      *atomic.Bool
+	initMtx       sync.RWMutex
+	Log           *logging.ZapLogger
+	Barrier       IBarrier
+	Parent        *Core
+	Config        *config.Config
+	RootTokens    IRootTokens
+	Router        *LogicalRouter
+	Auth          *Auth
 }
 
 func NewCore(
@@ -62,15 +62,15 @@ func NewCore(
 	auth *Auth,
 ) *Core {
 	core := &Core{
-		Log:            log,
-		sealedMtx:      sync.RWMutex{},
-		IsSealed:       &atomic.Bool{},
-		IsInitialized:  &atomic.Bool{},
-		Config:         config,
-		LogicalStorage: barrier,
-		RootTokens:     rootTokens,
-		Router:         router,
-		Auth:           auth,
+		Log:           log,
+		sealedMtx:     sync.RWMutex{},
+		IsSealed:      &atomic.Bool{},
+		IsInitialized: &atomic.Bool{},
+		Config:        config,
+		Barrier:       barrier,
+		RootTokens:    rootTokens,
+		Router:        router,
+		Auth:          auth,
 	}
 
 	lc.Append(
@@ -119,7 +119,7 @@ func (c *Core) Unseal(ctx context.Context, key []byte) error {
 	c.sealedMtx.Lock()
 	defer c.sealedMtx.Unlock()
 
-	if err := c.LogicalStorage.Unseal(ctx, key); err != nil {
+	if err := c.Barrier.Unseal(ctx, key); err != nil {
 		return err
 	}
 

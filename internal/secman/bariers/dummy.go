@@ -16,11 +16,12 @@ type DummyBarrier struct {
 	secman.IStorage
 	log    *logging.ZapLogger
 	sealed *atomic.Bool
+	key    secman.IKey
 }
 
 var _ secman.IBarrier = &DummyBarrier{}
 
-func NewDummyBarrier(storage secman.IStorage, log *logging.ZapLogger) *DummyBarrier {
+func NewDummyBarrier(storage secman.IStorage, log *logging.ZapLogger, key secman.IKey) *DummyBarrier {
 	sealed := &atomic.Bool{}
 	sealed.Store(true)
 
@@ -28,6 +29,7 @@ func NewDummyBarrier(storage secman.IStorage, log *logging.ZapLogger) *DummyBarr
 		IStorage: storage,
 		log:      log,
 		sealed:   sealed,
+		key:      key,
 	}
 }
 
@@ -94,4 +96,8 @@ func (b *DummyBarrier) GetOk(ctx context.Context, path string) (secman.Entry, bo
 }
 func (b *DummyBarrier) isSealed() bool {
 	return b.sealed.Load()
+}
+
+func (b *DummyBarrier) Init(ctx context.Context) (error, secman.IKey) {
+	return nil, nil
 }

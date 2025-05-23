@@ -15,9 +15,16 @@ type IBarrier interface {
 	Delete(ctx context.Context, path string) error
 	Unseal(ctx context.Context, key []byte) error
 	List(ctx context.Context, path string) ([]Entry, error)
+	// Init initializes the barrier with root key
+	Init(ctx context.Context) (error, IKey)
 }
 
 type Entry struct {
-	Path  string `json:"path"`
+	Key   string `json:"key"`
 	Value string `json:"value"`
+}
+
+type IKey interface {
+	Seal(data []byte) ([]byte, error)
+	Unseal(data []byte) ([]byte, error)
 }

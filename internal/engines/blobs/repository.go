@@ -3,7 +3,6 @@ package blobs
 import (
 	"context"
 	"encoding/json"
-	"path"
 
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
@@ -11,20 +10,22 @@ import (
 
 type Repository struct {
 	lg      *logging.ZapLogger
-	barrier secman.IBarrier
-	path    string
+	storage secman.ILogicalStorage
 }
 
-func NewRepository(lg *logging.ZapLogger, barrier secman.IBarrier) *Repository {
+func NewLogicalStorage(b secman.IBarrier) secman.ILogicalStorage {
+	return secman.NewLogicalStorage(b, "secrets/blobs")
+}
+
+func NewRepository(lg *logging.ZapLogger, storage secman.ILogicalStorage) *Repository {
 	return &Repository{
 		lg:      lg,
-		barrier: barrier,
-		path:    "secrets/blobs",
+		storage: storage,
 	}
 }
 
 func (r *Repository) IsExist(ctx context.Context) (params *BlobParams, ok bool, err error) {
-	entry, ok, err := r.barrier.GetOk(ctx, r.path)
+	entry, ok, err := r.storage.GetOk(ctx, "")
 	if err != nil {
 		return nil, false, err
 	}
@@ -46,8 +47,7 @@ func (r *Repository) Enable(ctx context.Context, params *BlobParams) error {
 		return err
 	}
 
-	if err := r.barrier.Update(ctx, r.path, secman.Entry{
-		Path:  r.path,
+	if err := r.storage.Update(ctx, "", secman.Entry{
 		Value: string(jsonParams),
 	}, 0); err != nil {
 		return err
@@ -57,11 +57,7 @@ func (r *Repository) Enable(ctx context.Context, params *BlobParams) error {
 }
 
 func (r *Repository) CreateBlob(ctx context.Context, key string, value string) error {
-	secretPath := path.Join(r.path, key)
-	if err := r.barrier.Update(ctx, secretPath, secman.Entry{
-		Path:  secretPath,
-		Value: value,
-	}, 0); err != nil {
+	if err := r.storage.Update(ctx, key, secman.Entry{Value: value, Key: key}, 0); err != nil {
 		return err
 	}
 
@@ -69,13 +65,11 @@ func (r *Repository) CreateBlob(ctx context.Context, key string, value string) e
 }
 
 func (r *Repository) Delete(ctx context.Context, key string) error {
-	secretPath := path.Join(r.path, key)
-	return r.barrier.Delete(ctx, secretPath)
+	return r.storage.Delete(ctx, key)
 }
 
 func (r *Repository) GetBlobKeyOk(ctx context.Context, key string) (string, bool, error) {
-	secretPath := path.Join(r.path, key)
-	entry, ok, err := r.barrier.GetOk(ctx, secretPath)
+	entry, ok, err := r.storage.GetOk(ctx, key)
 	if err != nil {
 		return "", false, err
 	}

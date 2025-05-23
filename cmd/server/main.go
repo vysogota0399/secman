@@ -77,6 +77,7 @@ func CreateApp() fx.Option {
 			fx.Annotate(secman.NewLogicalRouter, fx.ParamTags(`group:"backends"`)),
 			fx.Annotate(bariers.NewDummyBarrier, fx.As(new(secman.IBarrier))),
 			secman.NewAuth,
+			secman.NewKeyring,
 
 			// http
 			http.NewRouter,

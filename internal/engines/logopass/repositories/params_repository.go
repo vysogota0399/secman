@@ -16,17 +16,20 @@ type Params struct {
 }
 
 type ParamsRepository struct {
-	lg   *logging.ZapLogger
-	b    secman.IBarrier
-	path string
+	lg      *logging.ZapLogger
+	storage secman.ILogicalStorage
 }
 
-func NewParamsRepository(lg *logging.ZapLogger, b secman.IBarrier) *ParamsRepository {
-	return &ParamsRepository{lg: lg, b: b, path: "auth/logopass"}
+func NewLogicalStorage(b secman.IBarrier) secman.ILogicalStorage {
+	return secman.NewLogicalStorage(b, "auth/logopass")
+}
+
+func NewParamsRepository(lg *logging.ZapLogger, storage secman.ILogicalStorage) *ParamsRepository {
+	return &ParamsRepository{lg: lg, storage: storage}
 }
 
 func (r *ParamsRepository) IsExist(ctx context.Context) (bool, error) {
-	_, ok, err := r.b.GetOk(ctx, r.path)
+	_, ok, err := r.storage.GetOk(ctx, "")
 	if err != nil {
 		return false, err
 	}
@@ -35,7 +38,7 @@ func (r *ParamsRepository) IsExist(ctx context.Context) (bool, error) {
 }
 
 func (r *ParamsRepository) Get(ctx context.Context) (*Params, error) {
-	entry, err := r.b.Get(ctx, r.path)
+	entry, err := r.storage.Get(ctx, "")
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +59,7 @@ func (r *ParamsRepository) Update(ctx context.Context, params *Params) error {
 
 	entry := secman.Entry{
 		Value: string(entryValue),
-		Path:  r.path,
 	}
 
-	return r.b.Update(ctx, r.path, entry, 0)
+	return r.storage.Update(ctx, "", entry, 0)
 }

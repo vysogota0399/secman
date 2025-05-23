@@ -20,7 +20,7 @@ func (b *Backend) DeleteHandler(ctx *gin.Context, params *secman.LogicalParams) 
 	}
 
 	for _, path := range paths {
-		if err := b.repo.Delete(ctx, path.Path); err != nil {
+		if err := b.repo.Delete(ctx, path.Key); err != nil {
 			return nil, fmt.Errorf("failed to delete path: %w", err)
 		}
 	}

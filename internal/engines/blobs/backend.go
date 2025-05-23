@@ -182,7 +182,7 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 			Message: "invalid request, missing required field: ssl",
 		}, nil
 	}
-	blobParams.Adapter.Bucket = strings.ReplaceAll(b.repo.path, "/", "-")
+	blobParams.Adapter.Bucket = strings.ReplaceAll(b.RootPath(), "/", "-")
 
 	if err := b.repo.Enable(ctx, blobParams); err != nil {
 		return nil, fmt.Errorf("blobs: enable failed error when enabling %w", err)
