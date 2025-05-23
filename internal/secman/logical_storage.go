@@ -31,23 +31,36 @@ func NewLogicalStorage(b BarrierStorage, path string) *LogicalStorage {
 }
 
 func (s *LogicalStorage) Get(ctx context.Context, path string) (Entry, error) {
-	return s.b.Get(ctx, s.relativePath(path))
+	entry, err := s.b.Get(ctx, s.relativePath(path))
+	if err != nil {
+		return Entry{}, err
+	}
+
+	entry.Key = path
+	return entry, nil
 }
 
-func (s *LogicalStorage) GetOk(ctx context.Context, path string) (Entry, bool, error) {
-	return s.b.GetOk(ctx, s.relativePath(path))
+func (s *LogicalStorage) GetOk(ctx context.Context, key string) (Entry, bool, error) {
+	entry, err := s.b.Get(ctx, s.relativePath(key))
+	if err != nil {
+		return Entry{}, false, err
+	}
+
+	entry.Key = key
+
+	return entry, true, nil
 }
 
-func (s *LogicalStorage) Update(ctx context.Context, path string, value Entry, ttl time.Duration) error {
-	return s.b.Update(ctx, s.relativePath(path), value, ttl)
+func (s *LogicalStorage) Update(ctx context.Context, key string, value Entry, ttl time.Duration) error {
+	return s.b.Update(ctx, s.relativePath(key), value, ttl)
 }
 
-func (s *LogicalStorage) Delete(ctx context.Context, path string) error {
-	return s.b.Delete(ctx, s.relativePath(path))
+func (s *LogicalStorage) Delete(ctx context.Context, key string) error {
+	return s.b.Delete(ctx, s.relativePath(key))
 }
 
-func (s *LogicalStorage) List(ctx context.Context, path string) ([]Entry, error) {
-	return s.b.List(ctx, s.relativePath(path))
+func (s *LogicalStorage) List(ctx context.Context, key string) ([]Entry, error) {
+	return s.b.List(ctx, s.relativePath(key))
 }
 
 func (s *LogicalStorage) relativePath(p string) string {

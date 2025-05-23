@@ -2,10 +2,10 @@ package tokens
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
 
 	"github.com/vysogota0399/secman/internal/secman"
+	"github.com/vysogota0399/secman/internal/secman/cryptoutils"
 )
 
 type Token struct {
@@ -14,15 +14,7 @@ type Token struct {
 }
 
 func (t *Token) init() error {
-	rnd := rand.Reader
-
-	token := make([]byte, 32)
-	if _, err := rnd.Read(token); err != nil {
-		return err
-	}
-
-	t.Value = token
-
+	t.Value = cryptoutils.GenerateRandom(32)
 	return nil
 }
 

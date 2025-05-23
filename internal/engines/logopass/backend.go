@@ -2,7 +2,6 @@ package logopass
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 	logopass_repositories "github.com/vysogota0399/secman/internal/engines/logopass/repositories"
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
+	"github.com/vysogota0399/secman/internal/secman/cryptoutils"
 	"go.uber.org/zap"
 )
 
@@ -201,12 +201,5 @@ func (b *Backend) PostUnseal(ctx context.Context) error {
 }
 
 func generateSecretKey() string {
-	rnd := rand.Reader
-
-	token := make([]byte, 32)
-	if _, err := rnd.Read(token); err != nil {
-		panic(err)
-	}
-
-	return base64.StdEncoding.EncodeToString(token)
+	return base64.StdEncoding.EncodeToString(cryptoutils.GenerateRandom(32))
 }

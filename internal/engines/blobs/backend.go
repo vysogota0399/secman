@@ -4,15 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"strings"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
+	"github.com/vysogota0399/secman/internal/secman/cryptoutils"
 )
 
 var _ secman.LogicalBackend = &Backend{}
@@ -231,10 +230,7 @@ func (b *Backend) PostUnseal(ctx context.Context) error {
 }
 
 func (b *Backend) rndToken() string {
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	bytes := make([]byte, 64)
-	rnd.Read(bytes)
-
+	bytes := cryptoutils.GenerateRandom(64)
 	res := base64.StdEncoding.EncodeToString(bytes)
 
 	return strings.ReplaceAll(res, "/", "_")
