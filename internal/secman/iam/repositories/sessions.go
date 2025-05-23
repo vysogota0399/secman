@@ -54,7 +54,7 @@ func (s *Sessions) Create(ctx context.Context, sess *Session) error {
 	}
 
 	entry := secman.Entry{
-		Path:  "sys/sessions/" + sess.UUID,
+		Key:   "sys/sessions/" + sess.UUID,
 		Value: string(session),
 	}
 

@@ -9,14 +9,18 @@ import (
 // To unseal the barrier, the secret key is needed.
 // - Unseal is a method that unseals the barrier
 type IBarrier interface {
+	BarrierStorage
+	// Init initializes the barrier with root key
+	Init(ctx context.Context) (error, IKey)
+	Unseal(ctx context.Context, key []byte) error
+}
+
+type BarrierStorage interface {
 	Get(ctx context.Context, path string) (Entry, error)
 	GetOk(ctx context.Context, path string) (Entry, bool, error)
 	Update(ctx context.Context, path string, value Entry, ttl time.Duration) error
 	Delete(ctx context.Context, path string) error
-	Unseal(ctx context.Context, key []byte) error
 	List(ctx context.Context, path string) ([]Entry, error)
-	// Init initializes the barrier with root key
-	Init(ctx context.Context) (error, IKey)
 }
 
 type Entry struct {

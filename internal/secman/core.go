@@ -15,6 +15,7 @@ import (
 )
 
 type PhysicalEntry struct {
+	Key   string `json:"key"`
 	Value []byte `json:"value"`
 }
 
@@ -26,7 +27,7 @@ type IStorage interface {
 	Get(ctx context.Context, path string) (PhysicalEntry, error)
 	Update(ctx context.Context, path string, value PhysicalEntry, ttl time.Duration) error
 	Delete(ctx context.Context, path string) error
-	List(ctx context.Context, path string) ([]Entry, error)
+	List(ctx context.Context, path string) ([]PhysicalEntry, error)
 }
 
 var ErrEntryNotFound = errors.New("entry not found")

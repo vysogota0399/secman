@@ -15,7 +15,7 @@ type ILogicalStorage interface {
 }
 
 type LogicalStorage struct {
-	b      IBarrier
+	b      BarrierStorage
 	prefix string
 }
 

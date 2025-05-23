@@ -52,7 +52,7 @@ func (u *Users) Get(ctx context.Context, login string) (User, error) {
 		return User{}, err
 	}
 
-	user.Path = data.Path
+	user.Path = data.Key
 	return user, nil
 }
 
@@ -84,7 +84,7 @@ func (u *Users) Update(ctx context.Context, user *User) error {
 	}
 
 	entry := secman.Entry{
-		Path:  key,
+		Key:   key,
 		Value: string(userJSON),
 	}
 

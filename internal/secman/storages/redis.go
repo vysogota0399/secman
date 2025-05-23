@@ -79,8 +79,8 @@ func (s *RedisStorage) Delete(ctx context.Context, path string) error {
 	return s.rdb.Del(ctx, path).Err()
 }
 
-func (s *RedisStorage) List(ctx context.Context, path string) ([]secman.Entry, error) {
-	var entries []secman.Entry
+func (s *RedisStorage) List(ctx context.Context, path string) ([]secman.PhysicalEntry, error) {
+	var entries []secman.PhysicalEntry
 	var cursor uint64
 	var err error
 
@@ -109,10 +109,7 @@ func (s *RedisStorage) List(ctx context.Context, path string) ([]secman.Entry, e
 			for i, cmd := range cmds {
 				val, err := cmd.Bytes()
 				if err == nil {
-					entries = append(entries, secman.Entry{
-						Path:  keys[i],
-						Value: string(val),
-					})
+					entries = append(entries, secman.PhysicalEntry{Value: val, Key: keys[i]})
 				}
 			}
 		}
