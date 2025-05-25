@@ -12,7 +12,9 @@ type IBarrier interface {
 	BarrierStorage
 	// Init initializes the barrier with root key
 	Init(ctx context.Context) ([][]byte, error)
-	Unseal(ctx context.Context, key []byte) error
+	// Unseal unseals the barrier with the given key
+	// Returns true if the barrier is unsealed, false if error occurred or berier is still sealed
+	Unseal(ctx context.Context, key []byte) (bool, error)
 	Info() string
 }
 

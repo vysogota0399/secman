@@ -15,8 +15,8 @@ import (
 )
 
 type PhysicalEntry struct {
-	Key   string `json:"key"`
 	Value []byte `json:"value"`
+	Key   string `json:"key"`
 }
 
 // IStorage is an interface that defines the methods for a storage
@@ -120,16 +120,21 @@ func (c *Core) Unseal(ctx context.Context, key []byte) error {
 	c.sealedMtx.Lock()
 	defer c.sealedMtx.Unlock()
 
-	if err := c.Barrier.Unseal(ctx, key); err != nil {
+	unsealed, err := c.Barrier.Unseal(ctx, key)
+	if err != nil {
 		return err
 	}
 
-	// mount enabled engines
+	if !unsealed {
+		return nil
+	}
+
+	// mount enabled backend engines
 	if err := c.Router.PostUnsealEngines(ctx); err != nil {
 		return fmt.Errorf("core: unseal failed when mounting enabled engines: %w", err)
 	}
 
-	// mount auth engines
+	// mount auth
 	if err := c.Auth.PostUnseal(ctx, c.Router); err != nil {
 		return fmt.Errorf("core: unseal failed when mounting auth engines: %w", err)
 	}

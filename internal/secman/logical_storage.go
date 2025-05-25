@@ -2,6 +2,7 @@ package secman
 
 import (
 	"context"
+	"errors"
 	"path"
 	"time"
 )
@@ -43,6 +44,10 @@ func (s *LogicalStorage) Get(ctx context.Context, path string) (Entry, error) {
 func (s *LogicalStorage) GetOk(ctx context.Context, key string) (Entry, bool, error) {
 	entry, err := s.b.Get(ctx, s.relativePath(key))
 	if err != nil {
+		if errors.Is(err, ErrEntryNotFound) {
+			return Entry{}, false, nil
+		}
+
 		return Entry{}, false, err
 	}
 

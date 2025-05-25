@@ -1,18 +1,24 @@
 version: '3'
 
+# "unseal_tokens":["HTJpdfDuqn1E2E3FwKwldkg6Y6mz+a+h2qztHwOLs8he","ihscDbZF385KRv5yzkwUgtDTk3FZqyNnwdCGmliay7aR","2LZtGY17Lc45hnVFIOFFfmDSnY/y3vb4lOFjHAjhkZZ+","54m/bcnbXT2Yv2+kAtjPf0z7vnBCqevrxkXMn9JGPDG6","s43kx6ZQGOxPFQSDR1tBKVisLH6eBo3hd2NUZzqqHiA4"]
+
 env:
-  ROOT_TOKEN: "i84DkhUSo+O3SAqfIM8/vFuMrntO3SCrdXHaJmVy19s="
-  JWT_TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjIwNjMzOTQxNTYsImlhdCI6MTc0ODAzNDE1NiwiU2lkIjoiOTk3YTNlMjMtMjljZC00NzdiLWIwNjMtMjJhNzM1Mjc2MjZkIn0.eIHlL3OLPSMb8sNvqNJdBLNzqPgRkN1Un-54tpNd8yA'
+  ROOT_TOKEN: "3bPuOMYNtgI9osmR60PrKBvz27fhNYc6E+pZJVFRhgs="
+  JWT_TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjIwNjM2NDQ2NjksImlhdCI6MTc0ODI4NDY2OSwiU2lkIjoiY2NiZDljODMtYWMxOS00YTBkLWI1ZDMtMmQzY2E3ZjVkOTc3In0.eTDyj2Hb7hUlHzjbWuIJu_3VGRqx7S-UhburmAqesO8'
+
 
 tasks:
   status:
     cmd: curl http://127.0.0.1:8080/api/sys/status | jq
 
   init:
-    cmd: curl -v -X POST http://127.0.0.1:8080/api/sys/init
+    cmd: curl -v -X POST http://127.0.0.1:8080/api/sys/init | jq
 
   unseal:
-    cmd: 'curl -v -X POST -d "{\"key\": \"$ROOT_TOKEN\"}" -H "X-Secman-Token: $ROOT_TOKEN" http://127.0.0.1:8080/api/sys/unseal | jq'
+    cmds:
+      - 'curl -v -X POST -d "{\"key\": \"gSh2ciGJT3/jpNhe4vDAUWEfIbP0M5l4yFraa+2GRNeQ\"}" -H "X-Secman-Token: $ROOT_TOKEN" http://127.0.0.1:8080/api/sys/unseal | jq'
+      - 'curl -v -X POST -d "{\"key\": \"9uguf46UYfjBFX1XfRFZha3qLkg4RqKkt0O9qJjImAWq\"}" -H "X-Secman-Token: $ROOT_TOKEN" http://127.0.0.1:8080/api/sys/unseal | jq'
+      - 'curl -v -X POST -d "{\"key\": \"dVcE1LnclhyROYsshR85+U9Y86Awt44y0keCmxkv9E/x\"}" -H "X-Secman-Token: $ROOT_TOKEN" http://127.0.0.1:8080/api/sys/unseal | jq'
 
   enable-*:
     vars:
@@ -36,7 +42,7 @@ tasks:
 
   register:
     cmds:
-      - "curl -v -X POST -d '{\"login\": \"user1\", \"password\": \"qwerty$4\"}'  http://127.0.0.1:8080/api/engine/auth/logopass/register| jq"
+      - "curl -v -X POST -d '{\"login\": \"user1\", \"password\": \"qwerty$4\"}' http://127.0.0.1:8080/api/engine/auth/logopass/register| jq"
 
   run:
     cmds:
@@ -50,7 +56,7 @@ tasks:
     vars:
       STRUCT: '{{index .MATCH 0}}'
     cmds:
-      - mockgen -package=mocks -destination=pkg/mocks/{{.CLI_ARGS}}/{{.STRUCT}}.go github.com/vysogota0399/secman/{{.CLI_ARGS}} {{.STRUCT}}
+      - mockgen -package=mocks -destination={{.CLI_ARGS}}/{{.STRUCT}}.go github.com/vysogota0399/secman/{{.CLI_ARGS}} {{.STRUCT}}
 
   test_coverage:
     cmds:
@@ -99,12 +105,12 @@ tasks:
 
   show-blob:
     cmds:
-      - 'curl -v -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/blobs/OOW6tcD8B5D1SxVfwyoKKqkM1IiLfFSLWW9yPmQSsbULOXJAmIGoaPCw1cW8582+j7VDwrEcx5kOpf1KqCKnVg=='
+      - 'curl -v -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/blobs/Coezh1EN7uBqpdYVeZIblGrIQFkmLbmimwgsK6idZJb6JKfpAd9rJRzXnwJZn138w0gYp9j0sGaJZNKUdzwJmQ=='
 
   show-blob-metadata:
     cmds:
-      - 'curl -v -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/blobs/OOW6tcD8B5D1SxVfwyoKKqkM1IiLfFSLWW9yPmQSsbULOXJAmIGoaPCw1cW8582+j7VDwrEcx5kOpf1KqCKnVg==/metadata | jq'
+      - 'curl -v -H "Authorization: Bearer $JWT_TOKEN" http://127.0.0.1:8080/api/engine/secrets/blobs/Coezh1EN7uBqpdYVeZIblGrIQFkmLbmimwgsK6idZJb6JKfpAd9rJRzXnwJZn138w0gYp9j0sGaJZNKUdzwJmQ==/metadata | jq'
 
   update-blob-metadata:
     cmds:
-      - 'curl -v -X PUT -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: application/json" http://127.0.0.1:8080/api/engine/secrets/blobs/OOW6tcD8B5D1SxVfwyoKKqkM1IiLfFSLWW9yPmQSsbULOXJAmIGoaPCw1cW8582+j7VDwrEcx5kOpf1KqCKnVg==/metadata -d "{\"metadata\": {\"lorem\": \"ipsum\"}}" | jq'
+      - 'curl -v -X PUT -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: application/json" http://127.0.0.1:8080/api/engine/secrets/blobs/Coezh1EN7uBqpdYVeZIblGrIQFkmLbmimwgsK6idZJb6JKfpAd9rJRzXnwJZn138w0gYp9j0sGaJZNKUdzwJmQ==/metadata -d "{\"metadata\": {\"lorem\": \"ipsum\"}}" | jq'

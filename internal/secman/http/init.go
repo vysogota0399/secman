@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/base64"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -35,12 +36,6 @@ func (h *Init) Handler() func(c *gin.Context) {
 			return
 		}
 
-		if err := h.core.Init(h.coreRepository); err != nil {
-			h.log.ErrorCtx(c.Request.Context(), "init core failed", zap.Error(err))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "init core failed, see logs for more details"})
-			return
-		}
-
 		rootToken, err := h.core.RootTokens.Gen(c.Request.Context(), secman.RootTokenKey)
 		if err != nil {
 			h.log.ErrorCtx(c.Request.Context(), "init root token failed", zap.Error(err))
@@ -55,6 +50,21 @@ func (h *Init) Handler() func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "initialized", "root_token": rootToken, "unseal_tokens": unsealTokens})
+		if err := h.core.Init(h.coreRepository); err != nil {
+			h.log.ErrorCtx(c.Request.Context(), "init core failed", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "init core failed, see logs for more details"})
+			return
+		}
+
+		base64Thresholds := make([]string, 0, len(unsealTokens))
+		for _, token := range unsealTokens {
+			base64Thresholds = append(base64Thresholds, base64.StdEncoding.EncodeToString(token))
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message":    "initialized",
+			"root_token": rootToken,
+			"thresholds": base64Thresholds,
+		})
 	}
 }

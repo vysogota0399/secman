@@ -1,11 +1,8 @@
 package secman
 
 import (
-	"crypto/aes"
 	"sync"
 	"sync/atomic"
-
-	"github.com/vysogota0399/secman/internal/secman/cryptoutils"
 )
 
 type Keyring struct {
@@ -48,30 +45,43 @@ func (kr *Keyring) SetRootKey(key *Key) {
 	kr.RootKey = key
 }
 
-func (kr *Keyring) AddKey(key *Key) {
+// AddKey add key to keyring. Assumes that key is already generated.
+func (kr *Keyring) AddKey(key []byte, id uint32) *Key {
 	kr.keyMtx.Lock()
 	defer kr.keyMtx.Unlock()
 
-	kr.actualID = key.ID
-	kr.Keys[key.ID] = key
-}
-
-func (kr *Keyring) GenerateKey() (*Key, error) {
-	kr.keyMtx.Lock()
-	defer kr.keyMtx.Unlock()
-
-	k := cryptoutils.GenerateRandom(aes.BlockSize * 2)
-	id := atomic.AddUint32(&kr.actualID, 1)
-
-	key := &Key{
+	k := &Key{
 		ID:     id,
-		Raw:    k,
+		Raw:    key,
 		Status: KeyStatusActive,
 	}
 
-	kr.Keys[id] = key
+	kr.Keys[id] = k
 
-	return key, nil
+	return k
+}
+
+// GenerateKey process key rotation. Mark previous key as inactive.
+// It should not save key to keyring. To save key to keyring use AddKey.
+func (kr *Keyring) GenerateKey(b []byte) *Key {
+	kr.keyMtx.Lock()
+	defer kr.keyMtx.Unlock()
+
+	// mark previous key as inactive if it exists
+	prevKey := kr.Keys[kr.actualID]
+	if prevKey != nil {
+		prevKey.Status = KeyStatusInactive
+	}
+
+	atomic.AddUint32(&kr.actualID, 1)
+
+	k := &Key{
+		ID:     kr.actualID,
+		Raw:    b,
+		Status: KeyStatusActive,
+	}
+
+	return k
 }
 
 type Key struct {

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/base64"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -33,7 +34,13 @@ func (h *Unseal) Handler() func(c *gin.Context) {
 			return
 		}
 
-		if err := h.core.Unseal(c, []byte(req.Key)); err != nil {
+		decodedKey, err := base64.StdEncoding.DecodeString(req.Key)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid key"})
+			return
+		}
+
+		if err := h.core.Unseal(c, decodedKey); err != nil {
 			h.core.Log.ErrorCtx(c, "unseal failed", zap.Error(err))
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "unseal failed, see logs for more details"})
 			return

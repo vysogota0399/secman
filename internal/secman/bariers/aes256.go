@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -24,16 +25,24 @@ type PartsBuffer struct {
 	max   int
 }
 
-func NewPartsBuffer(max int) *PartsBuffer {
+func NewPartsBuffer(max int) (*PartsBuffer, error) {
+	if max == 0 {
+		return nil, errors.New("max must be greater than 0")
+	}
+
 	return &PartsBuffer{
 		Parts: make([][]byte, 0, max),
 		max:   max,
-	}
+	}, nil
 }
 
 func (pb *PartsBuffer) Add(part []byte) bool {
 	pb.mtx.Lock()
 	defer pb.mtx.Unlock()
+
+	if pb.max == 0 {
+		return true
+	}
 
 	pb.Parts = append(pb.Parts, part)
 
@@ -48,58 +57,71 @@ func (pb *PartsBuffer) Clear() {
 }
 
 type Aes256Barier struct {
-	storage            secman.IStorage
-	log                *logging.ZapLogger
-	sealed             *atomic.Bool
-	keyring            *secman.Keyring
-	thresholdsCount    int
-	partsCountRequired int
-	partsBuffer        *PartsBuffer
+	storage                 secman.IStorage
+	log                     *logging.ZapLogger
+	sealed                  *atomic.Bool
+	keyring                 *secman.Keyring
+	thresholdsCoundRequired int
+	partsCount              int
+	partsBuffer             *PartsBuffer
 }
 
 var _ secman.IBarrier = &Aes256Barier{}
 
-func NewAes256Barier(storage secman.IStorage, log *logging.ZapLogger, keyring *secman.Keyring) *Aes256Barier {
+func NewAes256Barier(storage secman.IStorage, log *logging.ZapLogger, keyring *secman.Keyring) (*Aes256Barier, error) {
 	sealed := &atomic.Bool{}
 	sealed.Store(true)
 
-	partsCountRequired := 5
-	thresholdsCount := 3
+	partsCount := 5
+	thresholdsCoundRequired := 3
+
+	partsBuffer, err := NewPartsBuffer(thresholdsCoundRequired)
+	if err != nil {
+		return nil, fmt.Errorf("aes256 barrier: create parts buffer failed error: %w", err)
+	}
 
 	return &Aes256Barier{
-		storage:            storage,
-		log:                log,
-		sealed:             sealed,
-		keyring:            keyring,
-		thresholdsCount:    thresholdsCount,
-		partsCountRequired: partsCountRequired,
-		partsBuffer:        NewPartsBuffer(partsCountRequired),
-	}
+		storage:                 storage,
+		log:                     log,
+		sealed:                  sealed,
+		keyring:                 keyring,
+		thresholdsCoundRequired: thresholdsCoundRequired,
+		partsCount:              partsCount,
+		partsBuffer:             partsBuffer,
+	}, nil
 }
 
-func (b *Aes256Barier) Unseal(ctx context.Context, key []byte) error {
+func (b *Aes256Barier) Unseal(ctx context.Context, key []byte) (bool, error) {
 	b.log.InfoCtx(ctx, "unsealing barrier")
 	defer b.log.InfoCtx(ctx, "unsealed barrier")
 
+	if !b.isSealed() {
+		return false, errors.New("barrier is already unsealed")
+	}
+
 	if !b.partsBuffer.Add(key) {
-		return nil
+		return false, nil
 	}
 
 	rootKey, err := shamir.Combine(b.partsBuffer.Parts)
+	defer b.partsBuffer.Clear()
 	if err != nil {
-		b.partsBuffer.Clear()
-		return fmt.Errorf("aes256 barrier: combine parts failed error: %w", err)
+		return false, fmt.Errorf("aes256 barrier: combine parts failed error: %w", err)
 	}
 
 	b.keyring.SetRootKey(&secman.Key{
-		ID:     1,
 		Raw:    rootKey,
 		Status: secman.KeyStatusActive,
 	})
 
+	// preload keys from storage and save them to the keyring
+	if err := b.initKeys(); err != nil {
+		return false, fmt.Errorf("aes256 barrier: init keys failed error: %w", err)
+	}
+
 	b.sealed.Store(false)
 
-	return nil
+	return true, nil
 }
 
 func (b *Aes256Barier) Delete(ctx context.Context, path string) error {
@@ -156,6 +178,7 @@ func (b *Aes256Barier) GetOk(ctx context.Context, path string) (secman.Entry, bo
 		return secman.Entry{}, false, err
 	}
 
+	entry.Key = path
 	return entry, true, nil
 }
 
@@ -173,15 +196,15 @@ func (b *Aes256Barier) List(ctx context.Context, path string) ([]secman.Entry, e
 	for i, pe := range physicalEntries {
 		key, err := b.keyFromCiphertext(pe.Value)
 		if err != nil {
-			return nil, fmt.Errorf("aes256 barrier: get key %s failed error: %w", pe.Key, err)
+			return nil, fmt.Errorf("aes256 barrier: get key %s failed error: %w", path, err)
 		}
 
 		plaintext, err := b.decript(pe.Value, key)
 		if err != nil {
-			return nil, fmt.Errorf("aes256 barrier: decrypt path %s failed error: %w", pe.Key, err)
+			return nil, fmt.Errorf("aes256 barrier: decrypt path %s failed error: %w", path, err)
 		}
 
-		entries[i] = secman.Entry{Value: string(plaintext)}
+		entries[i] = secman.Entry{Value: string(plaintext), Key: pe.Key}
 	}
 
 	return entries, nil
@@ -192,32 +215,41 @@ func (b *Aes256Barier) isSealed() bool {
 }
 
 func (b *Aes256Barier) Info() string {
-	return fmt.Sprintf("AES256 SSS keys: %d/%d", len(b.partsBuffer.Parts), b.partsCountRequired)
+	return fmt.Sprintf("AES256 SSS keys: %d/%d", len(b.partsBuffer.Parts), b.thresholdsCoundRequired)
 }
 
 func (b *Aes256Barier) Init(ctx context.Context) ([][]byte, error) {
-	rootKey, err := b.keyring.GenerateKey()
-	if err != nil {
-		return nil, fmt.Errorf("aes256 barrier: generate master key failed error: %w", err)
-	}
-	backendKey, err := b.keyring.GenerateKey()
-	if err != nil {
-		return nil, fmt.Errorf("aes256 barrier: generate backend key failed error: %w", err)
-	}
+	rootKey := b.generateKey()
+	backend := b.generateKey()
 
-	sealedBackendKey, err := b.encript(backendKey.Raw, rootKey)
+	// genarate key from bytes, don't put it to the keyring, before unsealing
+	backendKey := b.keyring.GenerateKey(backend)
+
+	backendKeyRaw := make([]byte, len(backendKey.Raw)+4)
+	binary.BigEndian.PutUint32(backendKeyRaw, backendKey.ID)
+
+	// backend key has such format: [id(4 bytes)][key(32 bytes)]
+	copy(backendKeyRaw[4:], backendKey.Raw)
+
+	sealedBackendKey, err := b.encript(
+		backendKeyRaw,
+		&secman.Key{
+			Raw: rootKey,
+		},
+	)
+
 	if err != nil {
 		return nil, fmt.Errorf("aes256 barrier: encrypt backend key failed error: %w", err)
 	}
 
-	thresholds, err := shamir.Split(backendKey.Raw, b.partsCountRequired, b.thresholdsCount)
+	// split root key into parts
+	thresholds, err := shamir.Split(rootKey, b.partsCount, b.thresholdsCoundRequired)
 	if err != nil {
 		return nil, fmt.Errorf("aes256 barrier: split backend key failed error: %w", err)
 	}
 
-	b.keyring.AddKey(backendKey)
-
-	if err := b.persistKey(ctx, sealedBackendKey); err != nil {
+	// save sealed backend key to storage
+	if err := b.persistKey(ctx, sealedBackendKey, backendKey.ID); err != nil {
 		return nil, fmt.Errorf("aes256 barrier: persist root backend key failed error: %w", err)
 	}
 
@@ -237,12 +269,15 @@ func (b *Aes256Barier) encript(message []byte, key *secman.Key) ([]byte, error) 
 
 	nonce := cryptoutils.GenerateRandom(aesgcm.NonceSize())
 
-	ciphertext := make([]byte, 4+aesgcm.NonceSize()+len(message)+aesgcm.Overhead())
+	// [id(4 bytes)][nonce(12 bytes)][ciphertext(variable)]
+	idLen := 4
+	metaLen := idLen + aesgcm.NonceSize()
+	totalLen := metaLen + len(message) + aesgcm.Overhead()
+	ciphertext := make([]byte, metaLen, totalLen)
+	binary.BigEndian.PutUint32(ciphertext, key.ID)
+	copy(ciphertext[idLen:], nonce)
 
-	binary.BigEndian.PutUint32(ciphertext[:4], key.ID)
-	copy(ciphertext[4:], nonce)
-	aesgcm.Seal(ciphertext[4+aesgcm.NonceSize():], nonce, message, nil)
-
+	ciphertext = aesgcm.Seal(ciphertext, nonce, message, nil)
 	return ciphertext, nil
 }
 
@@ -282,6 +317,29 @@ func (b *Aes256Barier) keyFromCiphertext(ciphertext []byte) (*secman.Key, error)
 	return key, nil
 }
 
-func (b *Aes256Barier) persistKey(ctx context.Context, key []byte) error {
-	return b.storage.Update(ctx, path.Join(secman.KeyringPath, string(key[:4])), secman.PhysicalEntry{Value: key}, 0)
+func (b *Aes256Barier) persistKey(ctx context.Context, key []byte, id uint32) error {
+	return b.storage.Update(ctx, path.Join(secman.KeyringPath, strconv.Itoa(int(id))), secman.PhysicalEntry{Value: key}, 0)
+}
+
+func (b *Aes256Barier) initKeys() error {
+	keys, err := b.storage.List(context.Background(), secman.KeyringPath)
+	if err != nil {
+		return fmt.Errorf("aes256 barrier: list keys failed error: %w", err)
+	}
+
+	for _, key := range keys {
+		decryptedKey, err := b.decript(key.Value, b.keyring.RootKey)
+		if err != nil {
+			return fmt.Errorf("aes256 barrier: decrypt key failed error: %w", err)
+		}
+
+		b.keyring.AddKey(decryptedKey[4:], binary.BigEndian.Uint32(decryptedKey))
+	}
+
+	return nil
+}
+
+func (b *Aes256Barier) generateKey() []byte {
+	// generate 32 bytes key block for AES256
+	return cryptoutils.GenerateRandom(aes.BlockSize * 2)
 }

@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/vysogota0399/secman/internal/logging"
@@ -44,6 +45,10 @@ func NewUsers(lg *logging.ZapLogger, b secman.IBarrier) *Users {
 func (u *Users) Get(ctx context.Context, login string) (User, error) {
 	data, err := u.b.Get(ctx, "sys/users/"+login)
 	if err != nil {
+		if errors.Is(err, secman.ErrEntryNotFound) {
+			return User{}, nil
+		}
+
 		return User{}, err
 	}
 
@@ -59,6 +64,10 @@ func (u *Users) Get(ctx context.Context, login string) (User, error) {
 func (u *Users) GetOk(ctx context.Context, login string) (User, bool, error) {
 	data, ok, err := u.b.GetOk(ctx, "sys/users/"+login)
 	if err != nil {
+		if errors.Is(err, secman.ErrEntryNotFound) {
+			return User{}, false, nil
+		}
+
 		return User{}, false, err
 	}
 

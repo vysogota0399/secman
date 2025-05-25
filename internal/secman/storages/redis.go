@@ -68,7 +68,7 @@ func (s *RedisStorage) Get(ctx context.Context, path string) (secman.PhysicalEnt
 		return secman.PhysicalEntry{}, fmt.Errorf("storage: failed to get entry with key %s: %w", path, err)
 	}
 
-	return secman.PhysicalEntry{Value: res}, nil
+	return secman.PhysicalEntry{Value: res, Key: path}, nil
 }
 
 func (s *RedisStorage) Update(ctx context.Context, path string, entry secman.PhysicalEntry, ttl time.Duration) error {
