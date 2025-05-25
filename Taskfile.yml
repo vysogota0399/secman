@@ -6,7 +6,7 @@ env:
 
 tasks:
   status:
-    cmd: curl http://127.0.0.1:8080/api/sys/status
+    cmd: curl http://127.0.0.1:8080/api/sys/status | jq
 
   init:
     cmd: curl -v -X POST http://127.0.0.1:8080/api/sys/init

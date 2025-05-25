@@ -20,6 +20,7 @@ func (h *Status) Handler() func(c *gin.Context) {
 		status := map[string]any{
 			"sealed":      h.core.IsSealed.Load(),
 			"initialized": h.core.IsInitialized.Load(),
+			"barrier":     h.core.Barrier.Info(),
 		}
 
 		c.JSON(http.StatusOK, status)

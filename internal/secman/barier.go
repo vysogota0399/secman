@@ -11,8 +11,9 @@ import (
 type IBarrier interface {
 	BarrierStorage
 	// Init initializes the barrier with root key
-	Init(ctx context.Context) ([]byte, error)
+	Init(ctx context.Context) ([][]byte, error)
 	Unseal(ctx context.Context, key []byte) error
+	Info() string
 }
 
 type BarrierStorage interface {

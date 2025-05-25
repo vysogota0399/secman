@@ -48,6 +48,13 @@ func (h *Init) Handler() func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "initialized", "root_token": rootToken})
+		unsealTokens, err := h.core.Barrier.Init(c.Request.Context())
+		if err != nil {
+			h.log.ErrorCtx(c.Request.Context(), "init barrier failed", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "init barrier failed, see logs for more details"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "initialized", "root_token": rootToken, "unseal_tokens": unsealTokens})
 	}
 }

@@ -41,6 +41,21 @@ func (k *Keyring) GetKey(id uint32) *Key {
 	return k.Keys[id]
 }
 
+func (kr *Keyring) SetRootKey(key *Key) {
+	kr.keyMtx.Lock()
+	defer kr.keyMtx.Unlock()
+
+	kr.RootKey = key
+}
+
+func (kr *Keyring) AddKey(key *Key) {
+	kr.keyMtx.Lock()
+	defer kr.keyMtx.Unlock()
+
+	kr.actualID = key.ID
+	kr.Keys[key.ID] = key
+}
+
 func (kr *Keyring) GenerateKey() (*Key, error) {
 	kr.keyMtx.Lock()
 	defer kr.keyMtx.Unlock()
