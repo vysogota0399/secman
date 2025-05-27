@@ -1,6 +1,7 @@
 package blobs
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -8,7 +9,7 @@ import (
 	"github.com/vysogota0399/secman/internal/secman"
 )
 
-func (b *Backend) deleteHandler(ctx *gin.Context, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
+func (b *Backend) deleteHandler(ctx context.Context, req *secman.LogicalRequest, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
 	token := params.Params["token"]
 
 	blobKey, ok, err := b.repo.GetBlobKeyOk(ctx, token)

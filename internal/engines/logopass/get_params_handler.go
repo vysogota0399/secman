@@ -1,19 +1,19 @@
 package logopass
 
 import (
+	"context"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/vysogota0399/secman/internal/engines/logopass/repositories"
 	"github.com/vysogota0399/secman/internal/secman"
 )
 
-func (b *Backend) getParamsHandler(ctx *gin.Context, requestParams *secman.LogicalParams) (*secman.LogicalResponse, error) {
-	params := b.getParams()
+func (b *Backend) getParamsHandler(ctx context.Context, req *secman.LogicalRequest, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
+	prms := b.getParams()
 
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
-		Message: params,
+		Message: prms,
 	}, nil
 }
 

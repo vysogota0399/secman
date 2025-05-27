@@ -12,7 +12,7 @@ import (
 
 type EnableEngine struct {
 	core   *secman.Core
-	router *secman.LogicalRouter
+	router secman.ILogicalRouter
 	log    *logging.ZapLogger
 }
 

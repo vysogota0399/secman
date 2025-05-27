@@ -1,6 +1,7 @@
 package pci_dss
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -8,7 +9,7 @@ import (
 	"github.com/vysogota0399/secman/internal/secman"
 )
 
-func (b *Backend) ShowSecurityCodeHandler(ctx *gin.Context, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
+func (b *Backend) ShowSecurityCodeHandler(ctx context.Context, req *secman.LogicalRequest, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
 	b.beMtx.RLock()
 	defer b.beMtx.RUnlock()
 

@@ -18,34 +18,35 @@ type Minio struct {
 	bucket string
 }
 
-func NewMinio(lg *logging.ZapLogger, ba *Backend) (*Minio, error) {
-	s3 := &Minio{lg: lg}
+func NewMinio(lg *logging.ZapLogger) *Minio {
+	return &Minio{lg: lg}
+}
 
+func (s3 *Minio) Start(ba *Backend) error {
 	cfg := ba.blobParams.Adapter
 	client, err := minio.New(cfg.URL, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.User, cfg.Password, ""),
 		Secure: cfg.SSL,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("minio: failed to create client %w", err)
+		return fmt.Errorf("minio: failed to create client %w", err)
 	}
 
 	s3.client = client
 
 	exists, err := s3.client.BucketExists(context.Background(), cfg.Bucket)
 	if err != nil {
-		return nil, fmt.Errorf("minio: failed to check if bucket exists %s %w", cfg.Bucket, err)
+		return fmt.Errorf("minio: failed to check if bucket exists %s %w", cfg.Bucket, err)
 	}
 
 	if !exists {
 		if err := s3.createBucket(context.Background(), cfg.Bucket); err != nil {
-			return nil, fmt.Errorf("minio: failed to create bucket %s %w", cfg.Bucket, err)
+			return fmt.Errorf("minio: failed to create bucket %s %w", cfg.Bucket, err)
 		}
 	}
 
 	s3.bucket = cfg.Bucket
-
-	return s3, nil
+	return nil
 }
 
 type Blob struct {

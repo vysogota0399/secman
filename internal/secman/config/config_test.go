@@ -21,6 +21,8 @@ func TestNewConfig(t *testing.T) {
 log_level: 2
 server:
   address: "localhost:8080"
+  cert_path: "certs/cert.pem"
+  key_path: "certs/private.key"
 storage:
   type: "file"
 `)
@@ -44,11 +46,13 @@ storage:
 				FileStoragePath: "config.yml",
 				LogLevel:        -1,
 				Server: Server{
-					Address: "",
+					Address:  "",
+					CertPath: "certs/cert.pem",
+					KeyPath:  "certs/private.key",
 				},
 				Storage: nil,
 			},
-			wantErr: true, // Will fail because config.yml doesn't exist
+			wantErr: true, // file not found
 		},
 		{
 			name: "with environment variables",
@@ -59,7 +63,9 @@ storage:
 				FileStoragePath: testConfigPath,
 				LogLevel:        -1, // Always set to -1 in NewConfig
 				Server: Server{
-					Address: "localhost:8080",
+					Address:  "localhost:8080",
+					CertPath: "certs/cert.pem",
+					KeyPath:  "certs/private.key",
 				},
 				Storage: map[string]any{
 					"type": "file",

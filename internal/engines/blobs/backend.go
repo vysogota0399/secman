@@ -16,6 +16,13 @@ import (
 
 var _ secman.LogicalBackend = &Backend{}
 
+type S3 interface {
+	Start(ba *Backend) error
+	Create(ctx context.Context, blob *Blob) error
+	Get(ctx context.Context, key string) (*Blob, error)
+	Delete(ctx context.Context, key string) error
+}
+
 type Backend struct {
 	beMtx      sync.RWMutex
 	exist      *atomic.Bool
@@ -27,7 +34,7 @@ type Backend struct {
 	s3         S3
 }
 
-func NewBackend(lg *logging.ZapLogger, blobRepo *Repository, metadataRepo *MetadataRepository) *Backend {
+func NewBackend(lg *logging.ZapLogger, blobRepo *Repository, metadataRepo *MetadataRepository, s3 S3) *Backend {
 	exist := &atomic.Bool{}
 	exist.Store(false)
 
@@ -36,6 +43,7 @@ func NewBackend(lg *logging.ZapLogger, blobRepo *Repository, metadataRepo *Metad
 		repo:     blobRepo,
 		metadata: metadataRepo,
 		exist:    exist,
+		s3:       s3,
 	}
 }
 
@@ -189,12 +197,10 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 
 	b.blobParams = blobParams
 
-	s3, err := NewMinio(b.lg, b)
-	if err != nil {
-		return nil, fmt.Errorf("blobs: enable failed error when creating minio client %w", err)
+	if err := b.s3.Start(b); err != nil {
+		return nil, fmt.Errorf("blobs: enable failed error when starting s3 %w", err)
 	}
 
-	b.s3 = s3
 	b.exist.Store(true)
 
 	return &secman.LogicalResponse{
@@ -217,12 +223,9 @@ func (b *Backend) PostUnseal(ctx context.Context) error {
 		return fmt.Errorf("blobs: post unseal failed error: %w", secman.ErrEngineIsNotEnabled)
 	}
 
-	s3, err := NewMinio(b.lg, b)
-	if err != nil {
-		return fmt.Errorf("blobs: post unseal failed error when creating minio client %w", err)
+	if err := b.s3.Start(b); err != nil {
+		return fmt.Errorf("blobs: post unseal failed error when starting s3 %w", err)
 	}
-
-	b.s3 = s3
 
 	b.exist.Store(true)
 

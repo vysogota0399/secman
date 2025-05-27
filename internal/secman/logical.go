@@ -52,7 +52,7 @@ type LogicalParams struct {
 // SkipAuth is a flag that indicates if the path should be skipped from authorization
 type Path struct {
 	Description string
-	Handler     func(ctx *gin.Context, params *LogicalParams) (*LogicalResponse, error)
+	Handler     func(ctx context.Context, req *LogicalRequest, params *LogicalParams) (*LogicalResponse, error)
 	// Body is the fields of the path, it is the data that will be sent to the handler
 	Body     func() any
 	Fields   []Field

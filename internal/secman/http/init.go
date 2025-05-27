@@ -13,12 +13,12 @@ import (
 type Init struct {
 	core           *secman.Core
 	log            *logging.ZapLogger
-	coreRepository *secman.CoreRepository
+	coreRepository secman.ICoreRepository
 }
 
 func NewInit(
 	core *secman.Core,
-	coreRepository *secman.CoreRepository,
+	coreRepository secman.ICoreRepository,
 ) *Init {
 	return &Init{
 		core:           core,

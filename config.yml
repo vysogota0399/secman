@@ -1,7 +1,9 @@
 log_level: -1
 
 server:
-  address: 127.0.0.1:8080
+  address: 127.0.0.1:8443
+  cert_path: certs/cert.pem
+  key_path: certs/private.key
 
 storage:
   type: redis

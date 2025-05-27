@@ -15,7 +15,9 @@ type Config struct {
 }
 
 type Server struct {
-	Address string `yml:"address"`
+	Address  string `yaml:"address"`
+	CertPath string `yaml:"cert_path"`
+	KeyPath  string `yaml:"key_path"`
 }
 
 func NewConfig() (*Config, error) {

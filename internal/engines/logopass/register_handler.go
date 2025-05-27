@@ -1,6 +1,7 @@
 package logopass
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,10 +12,10 @@ import (
 	"go.uber.org/zap"
 )
 
-func (b *Backend) registerHandler(ctx *gin.Context, requestParams *secman.LogicalParams) (*secman.LogicalResponse, error) {
-	body, ok := requestParams.Body.(*RegisterPathBody)
+func (b *Backend) registerHandler(ctx context.Context, req *secman.LogicalRequest, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
+	body, ok := params.Body.(*RegisterPathBody)
 	if !ok {
-		return nil, fmt.Errorf("type cast error got %T, expected pointer", requestParams.Body)
+		return nil, fmt.Errorf("type cast error got %T, expected pointer", params.Body)
 	}
 
 	user := iam_repositories.User{

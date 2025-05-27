@@ -1,6 +1,7 @@
 package pci_dss
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -8,9 +9,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/vysogota0399/secman/internal/secman"
+	"go.uber.org/zap"
 )
 
-func (b *Backend) CreateHandler(ctx *gin.Context, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
+func (b *Backend) CreateHandler(ctx context.Context, req *secman.LogicalRequest, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
 	b.beMtx.RLock()
 	defer b.beMtx.RUnlock()
 
@@ -20,7 +22,7 @@ func (b *Backend) CreateHandler(ctx *gin.Context, params *secman.LogicalParams) 
 	}
 
 	// Validate input
-	if err := b.validateCardData(&createParams.CardData); err != nil {
+	if err := b.validateCardData(ctx, &createParams.CardData); err != nil {
 		return &secman.LogicalResponse{
 			Status:  http.StatusBadRequest,
 			Message: gin.H{"error": err.Error()},
@@ -102,7 +104,7 @@ func (b *Backend) CreateHandler(ctx *gin.Context, params *secman.LogicalParams) 
 	}, nil
 }
 
-func (b *Backend) validateCardData(data *CardData) error {
+func (b *Backend) validateCardData(ctx context.Context, data *CardData) error {
 	if data.PAN == "" {
 		return fmt.Errorf("PAN is required")
 	}
@@ -116,7 +118,8 @@ func (b *Backend) validateCardData(data *CardData) error {
 	}
 
 	if _, err := time.Parse(time.RFC3339Nano, data.ExpiryDate); err != nil {
-		return fmt.Errorf("invalid expiry date format, expected RFC3339Nano: %w", err)
+		b.lg.ErrorCtx(ctx, "invalid expiry date format", zap.Error(err))
+		return fmt.Errorf("invalid expiry date format, expected RFC3339Nano")
 	}
 
 	if data.SecurityCode == "" {
@@ -126,7 +129,7 @@ func (b *Backend) validateCardData(data *CardData) error {
 	return nil
 }
 
-func (b *Backend) cleanupCreatedTokens(ctx *gin.Context, tokens map[string]string) {
+func (b *Backend) cleanupCreatedTokens(ctx context.Context, tokens map[string]string) {
 	token := tokens["pan"]
 	// Delete all associated tokens first
 	if cardholderName, ok := tokens["cardholder_name"]; ok {
@@ -142,7 +145,7 @@ func (b *Backend) cleanupCreatedTokens(ctx *gin.Context, tokens map[string]strin
 	b.repo.Delete(ctx, token)
 }
 
-func (b *Backend) processCreatePan(ctx *gin.Context, data *CardData) (string, error) {
+func (b *Backend) processCreatePan(ctx context.Context, data *CardData) (string, error) {
 	panToken := b.hashToken(data.PAN)
 	_, ok, err := b.repo.ValueOk(ctx, panToken)
 	if err != nil {
@@ -160,7 +163,7 @@ func (b *Backend) processCreatePan(ctx *gin.Context, data *CardData) (string, er
 	return panToken, nil
 }
 
-func (b *Backend) processCreateCardholderName(ctx *gin.Context, data *CardData, panToken string) (string, error) {
+func (b *Backend) processCreateCardholderName(ctx context.Context, data *CardData, panToken string) (string, error) {
 	cardholderNameToken := b.rndToken()
 
 	if err := b.repo.Create(ctx, panToken+"/cardholder_name/"+cardholderNameToken, data.CardholderName); err != nil {
@@ -170,7 +173,7 @@ func (b *Backend) processCreateCardholderName(ctx *gin.Context, data *CardData, 
 	return cardholderNameToken, nil
 }
 
-func (b *Backend) processCreateExpiryDate(ctx *gin.Context, data *CardData, panToken string) (string, error) {
+func (b *Backend) processCreateExpiryDate(ctx context.Context, data *CardData, panToken string) (string, error) {
 	expiryDateToken := b.rndToken()
 
 	expireAt, err := time.Parse(time.RFC3339Nano, data.ExpiryDate)
@@ -185,7 +188,7 @@ func (b *Backend) processCreateExpiryDate(ctx *gin.Context, data *CardData, panT
 	return expiryDateToken, nil
 }
 
-func (b *Backend) processCreateSecurityCode(ctx *gin.Context, data *CardData, panToken string) (string, error) {
+func (b *Backend) processCreateSecurityCode(ctx context.Context, data *CardData, panToken string) (string, error) {
 	securityCodeToken := b.rndToken()
 
 	if err := b.repo.Create(ctx, panToken+"/security_code/"+securityCodeToken, data.SecurityCode); err != nil {

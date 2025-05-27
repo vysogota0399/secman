@@ -1,6 +1,7 @@
 package blobs
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,7 +11,7 @@ import (
 	"github.com/vysogota0399/secman/internal/secman"
 )
 
-func (b *Backend) createHandler(ctx *gin.Context, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
+func (b *Backend) createHandler(ctx context.Context, req *secman.LogicalRequest, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
 	metadata, ok := params.Body.(*MetadataBody)
 	if !ok {
 		return nil, fmt.Errorf("type cast error got %T, expected pointer", params.Body)
@@ -20,7 +21,7 @@ func (b *Backend) createHandler(ctx *gin.Context, params *secman.LogicalParams) 
 		metadata.Metadata = make(map[string]string)
 	}
 
-	data, err := ctx.FormFile("file")
+	data, err := req.FormFile("file")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get file from form data %w", err)
 	}

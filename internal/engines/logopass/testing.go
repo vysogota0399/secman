@@ -1,0 +1,19 @@
+package logopass
+
+import (
+	"testing"
+
+	gomock "github.com/golang/mock/gomock"
+	"github.com/vysogota0399/secman/internal/secman"
+)
+
+func NewTestBackend(t *testing.T) *Backend {
+	lg := secman.NewLogger(t)
+	cnt := gomock.NewController(t)
+	repo := NewMockParamsRepository(cnt)
+	iam := NewMockIamAdapter(cnt)
+
+	be := NewBackend(lg, &Logopass{iam: iam}, repo)
+
+	return be
+}

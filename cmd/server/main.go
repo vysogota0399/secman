@@ -43,14 +43,14 @@ func CreateApp() fx.Option {
 
 			// core
 			fx.Annotate(secman.NewCore),
-			fx.Annotate(secman.NewCoreRepository, fx.ParamTags(`name:"unsealed_barrier"`)),
+			fx.Annotate(secman.NewCoreRepository, fx.ParamTags(`name:"unsealed_barrier"`), fx.As(new(secman.ICoreRepository))),
 			fx.Annotate(storages.NewStorage,
 				fx.As(new(secman.IStorage)),
 			),
-			fx.Annotate(secman.NewLogicalRouter, fx.ParamTags(`group:"backends"`)),
+			fx.Annotate(secman.NewLogicalRouter, fx.ParamTags(`group:"backends"`), fx.As(new(secman.ILogicalRouter))),
 			fx.Annotate(bariers.NewUnsealedBarrier, fx.As(new(secman.BarrierStorage)), fx.ResultTags(`name:"unsealed_barrier"`)),
 			fx.Annotate(bariers.NewAes256Barier, fx.As(new(secman.IBarrier)), fx.As(new(secman.BarrierStorage))),
-			secman.NewAuth,
+			fx.Annotate(secman.NewAuth, fx.As(new(secman.IAuth))),
 			secman.NewKeyring,
 
 			//--> engines
@@ -58,6 +58,7 @@ func CreateApp() fx.Option {
 			fx.Annotate(blobs.NewBackend, fx.As(new(secman.LogicalBackend)), fx.ResultTags(`group:"backends"`)),
 			fx.Annotate(blobs.NewRepository),
 			fx.Annotate(blobs.NewMetadataRepository, fx.ParamTags(`name:"unsealed_barrier"`)),
+			fx.Annotate(blobs.NewMinio, fx.As(new(blobs.S3))),
 
 			// logopass
 			logopass.NewLogopass,

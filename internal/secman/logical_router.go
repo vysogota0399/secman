@@ -11,13 +11,22 @@ import (
 	"go.uber.org/zap"
 )
 
+type ILogicalRouter interface {
+	Register(ctx context.Context, engine LogicalBackend) error
+	Resolve(path string) (LogicalBackend, error)
+	PostUnsealEngines(ctx context.Context) error
+	EnableEngine(ctx context.Context, engine LogicalBackend, req *LogicalRequest) (*LogicalResponse, error)
+}
+
+var _ ILogicalRouter = (*LogicalRouter)(nil)
+
 type LogicalRouter struct {
 	engines *radix.Tree
 	mtx     sync.RWMutex
 	lg      *logging.ZapLogger
 }
 
-func NewLogicalRouter(engines []LogicalBackend, coreRepository *CoreRepository, lg *logging.ZapLogger) (*LogicalRouter, error) {
+func NewLogicalRouter(engines []LogicalBackend, coreRepository ICoreRepository, lg *logging.ZapLogger) (*LogicalRouter, error) {
 	lg.InfoCtx(context.Background(), "initializing logical router start", zap.Int("engines_count", len(engines)))
 	defer lg.InfoCtx(context.Background(), "initializing logical router finished")
 

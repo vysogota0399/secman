@@ -1,6 +1,7 @@
 package blobs
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,7 +10,7 @@ import (
 	"github.com/vysogota0399/secman/internal/secman"
 )
 
-func (b *Backend) showBlob(ctx *gin.Context, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
+func (b *Backend) showBlob(ctx context.Context, req *secman.LogicalRequest, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
 	token := params.Params["token"]
 
 	blobKey, ok, err := b.repo.GetBlobKeyOk(ctx, token)

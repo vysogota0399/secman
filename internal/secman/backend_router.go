@@ -132,7 +132,7 @@ func (r *BackendRouter) Handle(ctx *gin.Context) (*LogicalResponse, error) {
 			node.Body = body
 		}
 
-		return node.Metadata.Handler(ctx, &LogicalParams{Params: node.Fields, Body: node.Body})
+		return node.Metadata.Handler(ctx.Request.Context(), &LogicalRequest{Context: ctx}, &LogicalParams{Params: node.Fields, Body: node.Body})
 	}
 
 	return &LogicalResponse{

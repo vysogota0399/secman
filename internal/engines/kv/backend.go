@@ -7,6 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/gin-gonic/gin"
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
 )
@@ -129,7 +130,7 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 	if b.exist.Load() {
 		return &secman.LogicalResponse{
 			Status:  http.StatusNotModified,
-			Message: "kv: already enabled",
+			Message: gin.H{"message": "kv: already enabled"},
 		}, nil
 	}
 
@@ -141,7 +142,7 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
-		Message: "kv enabled",
+		Message: gin.H{"message": "kv enabled"},
 	}, nil
 }
 

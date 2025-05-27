@@ -79,12 +79,12 @@ type MetadataBody struct {
 func (b *Backend) Paths() map[string]map[string]*secman.Path {
 	return map[string]map[string]*secman.Path{
 		http.MethodGet: {
-			PATH + "/:token/metadata": {
+			PATH + "/:card_token/metadata": {
 				Handler:     b.ShowMetadataHandler,
 				Description: "Get the metadata of a card",
 				Fields: []secman.Field{
 					{
-						Name:        "token",
+						Name:        "card_token",
 						Description: "The token of the card",
 					},
 				},
@@ -140,12 +140,12 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 				Description: "Get the security code of a card",
 				Fields: []secman.Field{
 					{
-						Name:        "security_code_token",
-						Description: "The token of the security code",
-					},
-					{
 						Name:        "card_token",
 						Description: "The pan token of the card",
+					},
+					{
+						Name:        "security_code_token",
+						Description: "The token of the security code",
 					},
 				},
 			},

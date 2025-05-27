@@ -17,15 +17,23 @@ type AuthorizeBackend interface {
 	Authorize(c *gin.Context) (bool, error)
 }
 
+type IAuth interface {
+	PostUnseal(ctx context.Context, router ILogicalRouter) error
+	EnableEngine(ctx context.Context, engine LogicalBackend) error
+	Authorize(c *gin.Context) error
+}
+
+var _ IAuth = (*Auth)(nil)
+
 type Auth struct {
 	Engines          []authPath `json:"engines"`
 	engineCollection []AuthorizeBackend
-	coreRepository   *CoreRepository
+	coreRepository   ICoreRepository
 	authMtx          sync.RWMutex
 	lg               *logging.ZapLogger
 }
 
-func NewAuth(coreRepository *CoreRepository, lg *logging.ZapLogger) *Auth {
+func NewAuth(coreRepository ICoreRepository, lg *logging.ZapLogger) *Auth {
 	return &Auth{
 		Engines:          []authPath{},
 		engineCollection: []AuthorizeBackend{},
@@ -35,7 +43,7 @@ func NewAuth(coreRepository *CoreRepository, lg *logging.ZapLogger) *Auth {
 	}
 }
 
-func (a *Auth) PostUnseal(ctx context.Context, router *LogicalRouter) error {
+func (a *Auth) PostUnseal(ctx context.Context, router ILogicalRouter) error {
 	authConfig, err := a.coreRepository.GetCoreAuthConfig(ctx)
 	if err != nil && !errors.Is(err, ErrEntryNotFound) {
 		return fmt.Errorf("auth: failed to get core config: %w", err)
@@ -59,12 +67,12 @@ func (a *Auth) PostUnseal(ctx context.Context, router *LogicalRouter) error {
 	a.engineCollection = make([]AuthorizeBackend, 0, len(a.Engines))
 
 	for _, engine := range a.Engines {
-		engine, err := router.Resolve(string(engine))
+		e, err := router.Resolve(string(engine))
 		if err != nil {
-			return fmt.Errorf("auth: failed to resolve engine %s: %w", engine.RootPath(), err)
+			return fmt.Errorf("auth: failed to resolve engine %s: %w", engine, err)
 		}
 
-		authBackend, ok := engine.(AuthorizeBackend)
+		authBackend, ok := e.(AuthorizeBackend)
 		if !ok {
 			return nil
 		}

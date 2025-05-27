@@ -1,6 +1,7 @@
 package secman
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/url"
@@ -21,7 +22,7 @@ func TestBackendRouter(t *testing.T) {
 	be.EXPECT().Paths().Return(map[string]map[string]*Path{
 		"GET": {
 			"/test": {
-				Handler: func(ctx *gin.Context, params *LogicalParams) (*LogicalResponse, error) {
+				Handler: func(ctx context.Context, req *LogicalRequest, params *LogicalParams) (*LogicalResponse, error) {
 					return &LogicalResponse{
 						Status:  http.StatusOK,
 						Message: "test",
@@ -31,7 +32,7 @@ func TestBackendRouter(t *testing.T) {
 		},
 		"POST": {
 			"/test": {
-				Handler: func(ctx *gin.Context, params *LogicalParams) (*LogicalResponse, error) {
+				Handler: func(ctx context.Context, req *LogicalRequest, params *LogicalParams) (*LogicalResponse, error) {
 					return &LogicalResponse{
 						Status:  http.StatusOK,
 						Message: "test",
@@ -41,7 +42,7 @@ func TestBackendRouter(t *testing.T) {
 		},
 		"PUT": {
 			"/test/:id": {
-				Handler: func(ctx *gin.Context, params *LogicalParams) (*LogicalResponse, error) {
+				Handler: func(ctx context.Context, req *LogicalRequest, params *LogicalParams) (*LogicalResponse, error) {
 					return &LogicalResponse{
 						Status:  http.StatusOK,
 						Message: "test",

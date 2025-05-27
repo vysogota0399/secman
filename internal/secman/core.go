@@ -47,8 +47,8 @@ type Core struct {
 	Parent        *Core
 	Config        *config.Config
 	RootTokens    IRootTokens
-	Router        *LogicalRouter
-	Auth          *Auth
+	Router        ILogicalRouter
+	Auth          IAuth
 }
 
 func NewCore(
@@ -56,11 +56,10 @@ func NewCore(
 	lc fx.Lifecycle,
 	log *logging.ZapLogger,
 	config *config.Config,
-	storage IStorage,
-	coreRepository *CoreRepository,
+	coreRepository ICoreRepository,
 	rootTokens IRootTokens,
-	router *LogicalRouter,
-	auth *Auth,
+	router ILogicalRouter,
+	auth IAuth,
 ) *Core {
 	core := &Core{
 		Log:           log,
@@ -99,7 +98,7 @@ func NewCore(
 	return core
 }
 
-func (c *Core) Init(coreRepository *CoreRepository) error {
+func (c *Core) Init(coreRepository ICoreRepository) error {
 	c.initMtx.Lock()
 	defer c.initMtx.Unlock()
 

@@ -2,8 +2,8 @@ package http
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
-	"net"
 	"net/http"
 	"text/template"
 	"time"
@@ -11,20 +11,44 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
+	"github.com/vysogota0399/secman/internal/secman/config"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
 type Server struct {
 	Router *Router
-	srv    *http.Server
+	srv    HTTPServer
 	lg     *logging.ZapLogger
 }
 
-func NewServer(lc fx.Lifecycle, core *secman.Core, r *Router, lg *logging.ZapLogger) *Server {
+type HTTPServer interface {
+	ListenAndServeTLS(certFile, keyFile string) error
+	Shutdown(ctx context.Context) error
+}
+
+func NewServer(lc fx.Lifecycle, core *secman.Core, r *Router, lg *logging.ZapLogger) (*Server, error) {
 	cfg := core.Config.Server
+
+	httpServer := &http.Server{
+		Addr:        cfg.Address,
+		Handler:     r.router,
+		ReadTimeout: time.Minute,
+	}
+
+	if cfg.Address == "" {
+		return nil, errors.New("http_server: address is empty")
+	}
+
+	tlsCfg, err := prepareTLS(core.Config)
+	if err != nil {
+		return nil, err
+	}
+
+	httpServer.TLSConfig = tlsCfg
+
 	s := &Server{
-		srv:    &http.Server{Addr: cfg.Address, Handler: r.router, ReadHeaderTimeout: time.Minute},
+		srv:    httpServer,
 		Router: r,
 		lg:     lg,
 	}
@@ -40,21 +64,12 @@ func NewServer(lc fx.Lifecycle, core *secman.Core, r *Router, lg *logging.ZapLog
 		},
 	)
 
-	return s
+	return s, nil
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	if s.srv.Addr == "" {
-		return errors.New("http_server: address is empty")
-	}
-
-	ln, err := net.Listen("tcp", s.srv.Addr)
-	if err != nil {
-		return err
-	}
-
 	go func() {
-		if err := s.srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := s.srv.ListenAndServeTLS("", ""); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			s.lg.ErrorCtx(ctx, "http_server: serve failer error", zap.Error(err))
 		}
 	}()
@@ -80,8 +95,7 @@ type Router struct {
 
 func NewRouter(
 	core *secman.Core,
-	initHandler *Init,
-	unsealHandler *Unseal,
+	coreRepository secman.ICoreRepository,
 ) *Router {
 	r := &Router{router: gin.New(), core: core}
 	api := r.router.Group("/api")
@@ -91,27 +105,29 @@ func NewRouter(
 	)
 
 	api.GET("/sys/status", NewStatus(core).Handler())
-	api.POST("/sys/init", initHandler.Handler())
+	api.POST("/sys/init", NewInit(core, coreRepository).Handler())
 
-	authorized := api.Group("/")
-	authorized.Use(
-		r.Authorize,
-	)
-
+	// Sealed routes available when the server is sealed
+	// authorize is required
 	{
-		sealed := authorized.Group("/")
+		sealed := api.Group("/")
 		sealed.Use(
 			r.AbortIfNotInitialized,
+			r.Authorize,
 		)
 
-		sealed.POST("/sys/unseal", unsealHandler.Handler())
+		sealed.POST("/sys/unseal", NewUnseal(core).Handler())
 	}
 
+	// Unsealed routes, only available when the server is unsealed
+	// authorize is required
 	{
-		unsealed := authorized.Group("/")
+		unsealed := api.Group("/")
+
 		unsealed.Use(
 			r.AbortIfNotInitialized,
 			r.AbortIfSealed,
+			r.Authorize,
 		)
 
 		unsealed.POST("/sys/engines/enable/*engine_path", NewEnableEngine(core).Handler())
@@ -159,4 +175,20 @@ func (r *Router) Authorize(c *gin.Context) {
 	}
 
 	c.Next()
+}
+
+func prepareTLS(cfg *config.Config) (*tls.Config, error) {
+	serverTLSCert, err := tls.LoadX509KeyPair(
+		cfg.Server.CertPath,
+		cfg.Server.KeyPath,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{serverTLSCert},
+	}
+
+	return tlsConfig, nil
 }

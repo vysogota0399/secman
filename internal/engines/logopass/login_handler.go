@@ -1,6 +1,7 @@
 package logopass
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -8,13 +9,13 @@ import (
 	"github.com/vysogota0399/secman/internal/secman"
 )
 
-func (b *Backend) LoginHandler(c *gin.Context, requestParams *secman.LogicalParams) (*secman.LogicalResponse, error) {
-	body, ok := requestParams.Body.(*LoginPathBody)
+func (b *Backend) LoginHandler(ctx context.Context, req *secman.LogicalRequest, params *secman.LogicalParams) (*secman.LogicalResponse, error) {
+	body, ok := params.Body.(*LoginPathBody)
 	if !ok {
-		return nil, fmt.Errorf("type cast error got %T, expected pointer", requestParams.Body)
+		return nil, fmt.Errorf("type cast error got %T, expected pointer", params.Body)
 	}
 
-	user, err := b.logopass.Authenticate(c.Request.Context(), body.Login, body.Password)
+	user, err := b.logopass.Authenticate(ctx, body.Login, body.Password)
 	if err != nil {
 		return &secman.LogicalResponse{
 			Status:  http.StatusUnauthorized,
@@ -22,7 +23,7 @@ func (b *Backend) LoginHandler(c *gin.Context, requestParams *secman.LogicalPara
 		}, nil
 	}
 
-	token, err := b.logopass.Login(c.Request.Context(), user, b)
+	token, err := b.logopass.Login(ctx, user, b)
 	if err != nil {
 		return &secman.LogicalResponse{
 			Status:  http.StatusInternalServerError,

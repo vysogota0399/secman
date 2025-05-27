@@ -9,6 +9,15 @@ import (
 	"github.com/vysogota0399/secman/internal/logging"
 )
 
+type ICoreRepository interface {
+	IsCoreInitialized(ctx context.Context) (bool, error)
+	SetCoreInitialized(ctx context.Context, initialized bool) error
+	GetCoreAuthConfig(ctx context.Context) (*Auth, error)
+	UpdateCoreAuthConfig(ctx context.Context, authConfig *Auth) error
+}
+
+var _ ICoreRepository = (*CoreRepository)(nil)
+
 type CoreRepository struct {
 	storage BarrierStorage
 	log     *logging.ZapLogger

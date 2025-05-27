@@ -42,7 +42,7 @@ type Backend struct {
 	router    *secman.BackendRouter
 }
 
-func NewBackend(lg *logging.ZapLogger, logopass *Logopass, barrier secman.IBarrier, paramsRep ParamsRepository) *Backend {
+func NewBackend(lg *logging.ZapLogger, logopass *Logopass, paramsRep ParamsRepository) *Backend {
 	be := &Backend{
 		lg:        lg,
 		logopass:  logopass,
