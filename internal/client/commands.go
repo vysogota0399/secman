@@ -5,7 +5,7 @@ import "strings"
 type Command struct {
 	Subcommands map[string]Command
 	Info        string
-	Handler     func(args []string, b *strings.Builder) error
+	Handler     func(args []string, b *strings.Builder, s *Session) error
 }
 
 type Commands map[string]Command

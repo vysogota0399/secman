@@ -5,13 +5,13 @@ import (
 	"strings"
 )
 
-func Process(args []string) {
+func Process(args []string, cmds map[string]Command, s *Session) {
 	b := &strings.Builder{}
 
 	if len(args) == 0 {
 		b.WriteString("Usage: secman <command> <subcommand> <args>\n\n")
 		b.WriteString("These are common secman commands used in various situations:\n\n")
-		for name, command := range AllCommands {
+		for name, command := range cmds {
 			b.WriteString(name + ", " + command.Info + "\n")
 
 			for sName, subcommand := range command.Subcommands {
@@ -30,7 +30,7 @@ func Process(args []string) {
 			return
 		}
 
-		if err := command.Handler(args[1:], b); err != nil {
+		if err := command.Handler(args[1:], b, s); err != nil {
 			b.WriteString("Failed: " + err.Error() + "\n\n")
 		}
 

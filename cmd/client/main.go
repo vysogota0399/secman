@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	client.Process(os.Args[1:])
+	client.Process(os.Args[1:], client.AllCommands, client.NewSession())
 }
