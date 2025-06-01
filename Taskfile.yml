@@ -3,6 +3,7 @@ version: '3'
 # "unseal_tokens":["HTJpdfDuqn1E2E3FwKwldkg6Y6mz+a+h2qztHwOLs8he","ihscDbZF385KRv5yzkwUgtDTk3FZqyNnwdCGmliay7aR","2LZtGY17Lc45hnVFIOFFfmDSnY/y3vb4lOFjHAjhkZZ+","54m/bcnbXT2Yv2+kAtjPf0z7vnBCqevrxkXMn9JGPDG6","s43kx6ZQGOxPFQSDR1tBKVisLH6eBo3hd2NUZzqqHiA4"]
 
 env:
+  LOG_LEVEL: 0
   ROOT_TOKEN: "l3TCi91S2SnFIzbXuWOJZhOk4EsF8MM2HYJ9sLWIPkI="
   JWT_TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjIwNjM5MDE2NzMsImlhdCI6MTc0ODU0MTY3MywiU2lkIjoiOTU1NmUyZDYtM2UxYi00OTkxLTgyZDQtMTAzNmQxNTU5NmViIn0.uHcPJTsWBD4RysO_bqZDfnXCZfkiUJ7TBpORHDcEMnU'
 
@@ -46,9 +47,8 @@ tasks:
 
   run:
     cmds:
-      - go build cmd/server/main.go
-      - mv main secman
-      - ./secman
+      - go build -o secman_server cmd/server/main.go
+      - ./secman_server
 
   genmock-*:
     desc: exec "task genmock-OrdersRepository -- internal/server/entities"
@@ -119,3 +119,8 @@ tasks:
     dir: certs
     cmds:
       - openssl req -x509 -newkey rsa:4096 -keyout private.key -out cert.pem -days 365 -nodes
+
+  build-cli:
+    cmds:
+      - go build -o secman cmd/cli/main.go
+      - mv secman $GOPATH/bin

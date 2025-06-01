@@ -3,6 +3,7 @@ package kv
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"path"
 
 	"github.com/vysogota0399/secman/internal/secman"
@@ -35,7 +36,7 @@ func (r *MetadataRepository) Get(ctx context.Context, path string) (map[string]s
 func (r *MetadataRepository) GetOk(ctx context.Context, key string) (map[string]string, bool, error) {
 	entry, err := r.Get(ctx, key)
 	if err != nil {
-		if err == secman.ErrEntryNotFound {
+		if errors.Is(err, secman.ErrEntryNotFound) {
 			return nil, false, nil
 		}
 

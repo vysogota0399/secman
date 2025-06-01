@@ -29,6 +29,6 @@ func (b *Backend) ShowHandler(ctx context.Context, req *secman.LogicalRequest, p
 
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
-		Message: gin.H{"key": entry},
+		Message: gin.H{"value": entry},
 	}, nil
 }

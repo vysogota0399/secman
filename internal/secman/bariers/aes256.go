@@ -104,8 +104,8 @@ func (b *Aes256Barier) Unseal(ctx context.Context, key []byte) (bool, error) {
 	}
 
 	rootKey, err := shamir.Combine(b.partsBuffer.Parts)
-	defer b.partsBuffer.Clear()
 	if err != nil {
+		b.partsBuffer.Clear()
 		return false, fmt.Errorf("aes256 barrier: combine parts failed error: %w", err)
 	}
 
@@ -116,6 +116,7 @@ func (b *Aes256Barier) Unseal(ctx context.Context, key []byte) (bool, error) {
 
 	// preload keys from storage and save them to the keyring
 	if err := b.initKeys(); err != nil {
+		b.partsBuffer.Clear()
 		return false, fmt.Errorf("aes256 barrier: init keys failed error: %w", err)
 	}
 
@@ -242,7 +243,7 @@ func (b *Aes256Barier) Init(ctx context.Context) ([][]byte, error) {
 		return nil, fmt.Errorf("aes256 barrier: encrypt backend key failed error: %w", err)
 	}
 
-	// split root key into parts
+	// split root key into partsw
 	thresholds, err := shamir.Split(rootKey, b.partsCount, b.thresholdsCoundRequired)
 	if err != nil {
 		return nil, fmt.Errorf("aes256 barrier: split backend key failed error: %w", err)

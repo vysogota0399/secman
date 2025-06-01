@@ -32,7 +32,7 @@ func (h *Init) Handler() func(c *gin.Context) {
 		h.log.DebugCtx(c.Request.Context(), "init start")
 
 		if h.core.IsInitialized.Load() {
-			c.JSON(http.StatusOK, gin.H{"message": "already initialized"})
+			c.JSON(http.StatusNotModified, gin.H{"message": "already initialized"})
 			return
 		}
 

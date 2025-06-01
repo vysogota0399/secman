@@ -58,6 +58,8 @@ func (kr *Keyring) AddKey(key []byte, id uint32) *Key {
 
 	kr.Keys[id] = k
 
+	kr.actualizeActualID()
+
 	return k
 }
 
@@ -96,3 +98,14 @@ const (
 	KeyStatusActive KeyStatus = iota
 	KeyStatusInactive
 )
+
+func (kr *Keyring) actualizeActualID() {
+	maxID := uint32(0)
+	for id, key := range kr.Keys {
+		if key.Status == KeyStatusActive && id > maxID {
+			maxID = id
+		}
+	}
+
+	kr.actualID = maxID
+}

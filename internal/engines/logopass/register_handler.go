@@ -18,6 +18,13 @@ func (b *Backend) registerHandler(ctx context.Context, req *secman.LogicalReques
 		return nil, fmt.Errorf("type cast error got %T, expected pointer", params.Body)
 	}
 
+	if body.Login == "" || body.Password == "" {
+		return &secman.LogicalResponse{
+			Status:  http.StatusBadRequest,
+			Message: gin.H{"error": "login and password are required"},
+		}, nil
+	}
+
 	user := iam_repositories.User{
 		Login:    body.Login,
 		Password: body.Password,
