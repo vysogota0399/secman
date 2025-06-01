@@ -42,6 +42,6 @@ func (h *EnableEngine) Handler() func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(resp.Status, gin.H{"message": resp.Message})
+		c.JSON(resp.Status, resp.Message)
 	}
 }

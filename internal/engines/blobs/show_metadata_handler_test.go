@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/vysogota0399/secman/internal/secman"
 )
@@ -35,16 +36,18 @@ func TestBackend_showMetadataHandler(t *testing.T) {
 			},
 			want: &secman.LogicalResponse{
 				Status: http.StatusOK,
-				Message: map[string]string{
-					"file_name":  "test.txt",
-					"created_at": "2024-01-01T00:00:00Z",
+				Message: gin.H{
+					"value": map[string]string{
+						"file_name":  "test.txt",
+						"created_at": "2024-01-01T00:00:00Z",
+					},
 				},
 			},
 			wantErr: false,
 			setup: func(b *Backend, req *secman.LogicalRequest, barrier *secman.MockBarrierStorage, logicalStorage *secman.MockILogicalStorage) {
 				// Setup expectations for successful metadata retrieval
 				barrier.EXPECT().
-					Get(gomock.Any(), "secrets/blobs/test-token/metadata").
+					Get(gomock.Any(), "unsealed/secrets/blobs/test-token/metadata").
 					Return(secman.Entry{Value: `{"file_name":"test.txt","created_at":"2024-01-01T00:00:00Z"}`}, nil)
 			},
 		},
@@ -63,7 +66,7 @@ func TestBackend_showMetadataHandler(t *testing.T) {
 			setup: func(b *Backend, req *secman.LogicalRequest, barrier *secman.MockBarrierStorage, logicalStorage *secman.MockILogicalStorage) {
 				// Setup expectations for non-existent metadata
 				barrier.EXPECT().
-					Get(gomock.Any(), "secrets/blobs/non-existent-token/metadata").
+					Get(gomock.Any(), "unsealed/secrets/blobs/non-existent-token/metadata").
 					Return(secman.Entry{}, secman.ErrEntryNotFound)
 			},
 		},
@@ -82,7 +85,7 @@ func TestBackend_showMetadataHandler(t *testing.T) {
 			setup: func(b *Backend, req *secman.LogicalRequest, barrier *secman.MockBarrierStorage, logicalStorage *secman.MockILogicalStorage) {
 				// Setup expectations for invalid metadata format
 				barrier.EXPECT().
-					Get(gomock.Any(), "secrets/blobs/test-token/metadata").
+					Get(gomock.Any(), "unsealed/secrets/blobs/test-token/metadata").
 					Return(secman.Entry{Value: `invalid json`}, nil)
 			},
 		},

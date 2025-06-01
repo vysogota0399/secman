@@ -48,14 +48,14 @@ func TestBackend_ShowMetadataHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token": "test_card_token",
+						"pan_token": "test_pan_token",
 					},
 				},
 			},
 			want: &secman.LogicalResponse{
 				Status: http.StatusOK,
 				Message: gin.H{
-					"metadata": map[string]string{
+					"value": map[string]string{
 						"created_at": "2024-03-20T12:00:00Z",
 					},
 				},
@@ -82,7 +82,7 @@ func TestBackend_ShowMetadataHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token": "test_card_token",
+						"pan_token": "test_pan_token",
 					},
 				},
 			},
@@ -110,7 +110,7 @@ func TestBackend_ShowMetadataHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token": "test_card_token",
+						"pan_token": "test_pan_token",
 					},
 				},
 			},

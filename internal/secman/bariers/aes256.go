@@ -166,7 +166,7 @@ func (b *Aes256Barier) Get(ctx context.Context, path string) (secman.Entry, erro
 		return secman.Entry{}, fmt.Errorf("aes256 barrier: decrypt key %s failed error: %w", path, err)
 	}
 
-	return secman.Entry{Value: string(plaintext)}, nil
+	return secman.Entry{Value: string(plaintext), Path: path}, nil
 }
 
 func (b *Aes256Barier) GetOk(ctx context.Context, path string) (secman.Entry, bool, error) {
@@ -179,7 +179,6 @@ func (b *Aes256Barier) GetOk(ctx context.Context, path string) (secman.Entry, bo
 		return secman.Entry{}, false, err
 	}
 
-	entry.Key = path
 	return entry, true, nil
 }
 
@@ -205,7 +204,7 @@ func (b *Aes256Barier) List(ctx context.Context, path string) ([]secman.Entry, e
 			return nil, fmt.Errorf("aes256 barrier: decrypt path %s failed error: %w", path, err)
 		}
 
-		entries[i] = secman.Entry{Value: string(plaintext), Key: pe.Key}
+		entries[i] = secman.Entry{Value: string(plaintext), Path: pe.Path}
 	}
 
 	return entries, nil

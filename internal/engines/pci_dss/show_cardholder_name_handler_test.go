@@ -48,14 +48,14 @@ func TestBackend_ShowCardholderNameHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token":            "test_card_token",
+						"pan_token":            "test_pan_token",
 						"cardholder_name_token": "test_name_token",
 					},
 				},
 			},
 			want: &secman.LogicalResponse{
 				Status:  http.StatusOK,
-				Message: gin.H{"cardholder_name": "John Doe"},
+				Message: gin.H{"value": "John Doe"},
 			},
 			wantErr: false,
 			prepare: func(mockStorage *secman.MockILogicalStorage, b *Backend) {
@@ -76,7 +76,7 @@ func TestBackend_ShowCardholderNameHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token":            "test_card_token",
+						"pan_token":            "test_pan_token",
 						"cardholder_name_token": "test_name_token",
 					},
 				},
@@ -104,7 +104,7 @@ func TestBackend_ShowCardholderNameHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token":            "test_card_token",
+						"pan_token":            "test_pan_token",
 						"cardholder_name_token": "test_name_token",
 					},
 				},

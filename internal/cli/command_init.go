@@ -31,14 +31,14 @@ func (c *InitCommand) Parse(args []string) error {
 }
 
 func (c *InitCommand) Handle(ctx context.Context, b *strings.Builder, o *Operation) error {
-	initResp, code, err := o.Client.Post(ctx, "sys/init", nil, nil)
+	initResp, err := o.Client.Post(ctx, "sys/init", nil, nil)
 	if err != nil {
-		return err
-	}
+		if initResp.Status == http.StatusNotModified {
+			b.WriteString("Server already initialized\n")
+			return nil
+		}
 
-	if code == http.StatusNotModified {
-		b.WriteString("Server already initialized\n")
-		return nil
+		return err
 	}
 
 	type InitResponse struct {
@@ -47,12 +47,14 @@ func (c *InitCommand) Handle(ctx context.Context, b *strings.Builder, o *Operati
 	}
 
 	var initResponse InitResponse
-	if err := json.NewDecoder(initResp).Decode(&initResponse); err != nil {
+	if err := json.NewDecoder(initResp.Body).Decode(&initResponse); err != nil {
 		return err
 	}
 
+	o.Session.Clear()
+
 	if c.persistToken {
-		o.Session.SetRootToken(initResponse.RootToken)
+		o.Session.Login(initResponse.RootToken, "root_token")
 	}
 
 	b.WriteString("Server initialized successfully\n")

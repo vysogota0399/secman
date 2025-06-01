@@ -1,50 +1,14 @@
 version: '3'
 
-# "unseal_tokens":["HTJpdfDuqn1E2E3FwKwldkg6Y6mz+a+h2qztHwOLs8he","ihscDbZF385KRv5yzkwUgtDTk3FZqyNnwdCGmliay7aR","2LZtGY17Lc45hnVFIOFFfmDSnY/y3vb4lOFjHAjhkZZ+","54m/bcnbXT2Yv2+kAtjPf0z7vnBCqevrxkXMn9JGPDG6","s43kx6ZQGOxPFQSDR1tBKVisLH6eBo3hd2NUZzqqHiA4"]
-
 env:
   LOG_LEVEL: 0
-  ROOT_TOKEN: "l3TCi91S2SnFIzbXuWOJZhOk4EsF8MM2HYJ9sLWIPkI="
-  JWT_TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjIwNjM5MDE2NzMsImlhdCI6MTc0ODU0MTY3MywiU2lkIjoiOTU1NmUyZDYtM2UxYi00OTkxLTgyZDQtMTAzNmQxNTU5NmViIn0.uHcPJTsWBD4RysO_bqZDfnXCZfkiUJ7TBpORHDcEMnU'
-
 
 tasks:
-  status:
-    cmd: curl -kv https://127.0.0.1:8443/api/sys/status | jq
-
-  init:
-    cmd: curl -kv -X POST https://127.0.0.1:8443/api/sys/init | jq
-
-  unseal:
-    cmds:
-      - 'curl -kv -X POST -d "{\"key\": \"EZZBCH1/ZGNonBm5F6D9z0MtZ5Ev2Qvb0b7WXu3+FQC4\"}" -H "X-Secman-Token: $ROOT_TOKEN" https://127.0.0.1:8443/api/sys/unseal | jq'
-      - 'curl -kv -X POST -d "{\"key\": \"PRw81Eq4sk8i2/wh2IxhM1MKdiHqBhiR8+mKTU/MXXup\"}" -H "X-Secman-Token: $ROOT_TOKEN" https://127.0.0.1:8443/api/sys/unseal | jq'
-      - 'curl -kv -X POST -d "{\"key\": \"6QcrHMHCqDI560q3d1phpb1e8OUJKW3ma/LeM82+Dlp7\"}" -H "X-Secman-Token: $ROOT_TOKEN" https://127.0.0.1:8443/api/sys/unseal | jq'
-
   enable-*:
     vars:
       ENGINE: '{{index .MATCH 0}}'
     cmds:
       - 'curl -kv -X POST -H "X-Secman-Token: $ROOT_TOKEN" https://127.0.0.1:8443/api/sys/engines/enable/{{.ENGINE}} -d "{}" | jq'
-
-  auth-params:
-    cmds:
-      - 'curl -H "Authorization: Bearer $JWT_TOKEN" -kv https://127.0.0.1:8443/api/engine/auth/logopass/ | jq'
-
-  enable_auth-*:
-    vars:
-      ENGINE: '{{index .MATCH 0}}'
-    cmds:
-      - 'curl -kv -X POST -H "X-Secman-Token: $ROOT_TOKEN" https://127.0.0.1:8443/api/sys/auth/enable -d "{\"engine_path\": \"{{.ENGINE}}\"}" | jq'
-
-  login:
-    cmds:
-      - "curl -kv -X POST -H 'Content-Type: application/json' -d '{\"login\": \"user1\", \"password\": \"qwerty$4\"}'  https://127.0.0.1:8443/api/engine/auth/logopass/login| jq"
-
-  register:
-    cmds:
-      - "curl -kv -X POST -H 'Content-Type: application/json' -d '{\"login\": \"user1\", \"password\": \"qwerty$4\"}' https://127.0.0.1:8443/api/engine/auth/logopass/register| jq"
-
   run:
     cmds:
       - go build -o secman_server cmd/server/main.go
@@ -63,58 +27,7 @@ tasks:
       - go clean -testcache
       - go test -count 1 ./internal/... -coverprofile=coverage.out
       - go tool cover -func=coverage.out
-      # - rm coverage.out
-
-  create-secret:
-    cmds:
-      - 'curl -kv -X POST -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: application/json" https://127.0.0.1:8443/api/engine/secrets/kv -d "{\"key\": \"test\", \"value\": \"test\"}" | jq'
-
-  get-secret:
-    cmds:
-      - 'curl -kv -H "Authorization: Bearer $JWT_TOKEN" https://127.0.0.1:8443/api/engine/secrets/kv/test | jq'
-
-  get-secret-params:
-    cmds:
-      - 'curl -kv -H "Authorization: Bearer $JWT_TOKEN" https://127.0.0.1:8443/api/engine/secrets/kv/test/params | jq'
-
-  update-secret-params:
-    cmds:
-      - 'curl -kv -X PUT -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: application/json" https://127.0.0.1:8443/api/engine/secrets/kv/test/params -d "{\"metadata\": {\"lorem\": \"ipsum\"}}" | jq'
-
-  create-card:
-    cmds:
-      - 'curl -kv -X POST -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: application/json" https://127.0.0.1:8443/api/engine/secrets/pci_dss -d "{\"card_data\": {\"pan\": \"1234567890123458\", \"cardholder_name\": \"John Doe\", \"expiry_date\": \"2025-01-01T00:00:00Z\", \"security_code\": \"123\"}}" | jq'
-
-  delete-card:
-    cmds:
-      - 'curl -kv -X DELETE -H "Authorization: Bearer $JWT_TOKEN" https://127.0.0.1:8443/api/engine/secrets/pci_dss/2c028569da61ac7239fc1b1bd59f12052b3b478f1bf53ec6a098edd6ad61211e| jq'
-
-  enable-blob:
-    cmds:
-      - 'curl -kv -X POST -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: application/json" https://127.0.0.1:8443/api/sys/engines/enable/secrets/blobs -d "{\"adapter\": {\"url\": \"127.0.0.1:9000\", \"user\": \"minio\", \"password\": \"minio123\", \"ssl\": false}}" | jq'
-
-  create-blob:
-    cmds:
-      - echo "test" > testfile.txt
-      - 'curl -kv -X POST -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: multipart/form-data" https://127.0.0.1:8443/api/engine/secrets/blobs -F "file=@testfile.txt" -F "metadata[lorem]=ipsum" | jq'
-      - rm testfile.txt
-
-  delete-blob:
-    cmds:
-      - 'curl -kv -X DELETE -H "Authorization: Bearer $JWT_TOKEN" https://127.0.0.1:8443/api/engine/secrets/blobs/2r2bioCZYxRDaWbOjHPNIbVkVIVWfoBfy8YXLpfJAKvfRVpxZztSUSqwcjZeGHySD2xHvXWZBJfj4Aok8cmSxg==| jq'
-
-  show-blob:
-    cmds:
-      - 'curl -kv -H "Authorization: Bearer $JWT_TOKEN" https://127.0.0.1:8443/api/engine/secrets/blobs/Coezh1EN7uBqpdYVeZIblGrIQFkmLbmimwgsK6idZJb6JKfpAd9rJRzXnwJZn138w0gYp9j0sGaJZNKUdzwJmQ=='
-
-  show-blob-metadata:
-    cmds:
-      - 'curl -kv -H "Authorization: Bearer $JWT_TOKEN" https://127.0.0.1:8443/api/engine/secrets/blobs/Coezh1EN7uBqpdYVeZIblGrIQFkmLbmimwgsK6idZJb6JKfpAd9rJRzXnwJZn138w0gYp9j0sGaJZNKUdzwJmQ==/metadata | jq'
-
-  update-blob-metadata:
-    cmds:
-      - 'curl -kv -X PUT -H "Authorization: Bearer $JWT_TOKEN" -H "Content-Type: application/json" https://127.0.0.1:8443/api/engine/secrets/blobs/Coezh1EN7uBqpdYVeZIblGrIQFkmLbmimwgsK6idZJb6JKfpAd9rJRzXnwJZn138w0gYp9j0sGaJZNKUdzwJmQ==/metadata -d "{\"metadata\": {\"lorem\": \"ipsum\"}}" | jq'
-
+      - rm coverage.out
   gen-pair:
     dir: certs
     cmds:
@@ -124,3 +37,22 @@ tasks:
     cmds:
       - go build -o secman cmd/cli/main.go
       - mv secman $GOPATH/bin
+
+  build-server:
+    cmds:
+      - go build -o secman_server -ldflags="-X main.BuildVersion=v1.0.0 -X 'main.BuildDate=$(date +'%Y/%m/%d %H:%M:%S')'" cmd/server/main.go
+      - mv secman_server $GOPATH/bin
+
+  init:
+    deps: [gen-pair]
+    cmds:
+      - mv config.yml.example config.yml
+      - docker compose up -d
+
+  check-env:
+    cmds:
+      - docker ps | grep redis || echo "redis not found"
+      - docker ps | grep minio || echo "minio not found"
+      - ls certs/cert.pem || echo "cert.pem not found"
+      - ls certs/private.key || echo "private.key not found"
+      - ls config.yml || echo "config.yml not found"

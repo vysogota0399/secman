@@ -14,13 +14,13 @@ import (
 type ISession interface {
 	Init(ctx context.Context) error
 	Persist() error
-	GetToken() string
-	SetRootToken(token string)
 	GetSecrets() map[string]string
 	Set(key, value string)
-	Get(key string) string
+	Get(key string) (string, bool)
 	Authenticate(m map[string]string) error
-	TruncateSecrets()
+	Login(token string, provider string)
+	Clear()
+	GetAuthProvider(ap string) AuthProvider
 }
 
 type Operation struct {
@@ -86,6 +86,8 @@ func Run(
 	if err := command.Handle(ctx, b, op); err != nil {
 		b.WriteString("Failed: " + err.Error())
 	}
+
+	lg.DebugCtx(ctx, "state before persist", zap.Any("session", s))
 
 	if err := s.Persist(); err != nil {
 		b.WriteString("Failed to save session: " + err.Error())

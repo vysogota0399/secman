@@ -14,7 +14,7 @@ func (b *Backend) UpdateMetadataHandler(ctx context.Context, req *secman.Logical
 	b.beMtx.RLock()
 	defer b.beMtx.RUnlock()
 
-	cardToken := params.Params["card_token"]
+	cardToken := params.Params["pan_token"]
 
 	entry, ok, err := b.metadata.GetOk(ctx, cardToken)
 	if err != nil {

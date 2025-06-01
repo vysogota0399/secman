@@ -65,11 +65,11 @@ func TestBackend_UpdateMetadataHandler(t *testing.T) {
 			wantErr: false,
 			prepare: func(mockStorage *secman.MockILogicalStorage, b *Backend) {
 				mockStorage.EXPECT().
-					Get(gomock.Any(), gomock.Any()).
+					GetOk(gomock.Any(), gomock.Any()).
 					Return(secman.Entry{
 						Key:   "test-key",
 						Value: `{"owner":"old-owner","type":"old-type"}`,
-					}, nil)
+					}, true, nil)
 				mockStorage.EXPECT().
 					Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil)
@@ -106,8 +106,8 @@ func TestBackend_UpdateMetadataHandler(t *testing.T) {
 			wantErr: false,
 			prepare: func(mockStorage *secman.MockILogicalStorage, b *Backend) {
 				mockStorage.EXPECT().
-					Get(gomock.Any(), gomock.Any()).
-					Return(secman.Entry{}, secman.ErrEntryNotFound)
+					GetOk(gomock.Any(), gomock.Any()).
+					Return(secman.Entry{}, false, nil)
 			},
 		},
 		{
@@ -158,8 +158,8 @@ func TestBackend_UpdateMetadataHandler(t *testing.T) {
 			wantErr: true,
 			prepare: func(mockStorage *secman.MockILogicalStorage, b *Backend) {
 				mockStorage.EXPECT().
-					Get(gomock.Any(), gomock.Any()).
-					Return(secman.Entry{}, assert.AnError)
+					GetOk(gomock.Any(), gomock.Any()).
+					Return(secman.Entry{}, false, assert.AnError)
 			},
 		},
 	}

@@ -57,11 +57,11 @@ func TestBackend_updateMetadataHandler(t *testing.T) {
 
 				// Setup expectations for successful metadata update
 				barrier.EXPECT().
-					Get(gomock.Any(), "secrets/blobs/test-token/metadata").
+					Get(gomock.Any(), "unsealed/secrets/blobs/test-token/metadata").
 					Return(secman.Entry{Value: `{"existing_key":"existing_value"}`}, nil)
 
 				barrier.EXPECT().
-					Update(gomock.Any(), "secrets/blobs/test-token/metadata", gomock.Any(), gomock.Any()).
+					Update(gomock.Any(), "unsealed/secrets/blobs/test-token/metadata", gomock.Any(), gomock.Any()).
 					Return(nil)
 			},
 		},
@@ -97,7 +97,7 @@ func TestBackend_updateMetadataHandler(t *testing.T) {
 
 				// Setup expectations for non-existent metadata
 				barrier.EXPECT().
-					Get(gomock.Any(), "secrets/blobs/non-existent-token/metadata").
+					Get(gomock.Any(), "unsealed/secrets/blobs/non-existent-token/metadata").
 					Return(secman.Entry{}, secman.ErrEntryNotFound)
 			},
 		},
@@ -150,11 +150,11 @@ func TestBackend_updateMetadataHandler(t *testing.T) {
 
 				// Setup expectations for successful get but failed update
 				barrier.EXPECT().
-					Get(gomock.Any(), "secrets/blobs/test-token/metadata").
+					Get(gomock.Any(), "unsealed/secrets/blobs/test-token/metadata").
 					Return(secman.Entry{Value: `{"existing_key":"existing_value"}`}, nil)
 
 				barrier.EXPECT().
-					Update(gomock.Any(), "secrets/blobs/test-token/metadata", gomock.Any(), gomock.Any()).
+					Update(gomock.Any(), "unsealed/secrets/blobs/test-token/metadata", gomock.Any(), gomock.Any()).
 					Return(secman.ErrEntryNotFound)
 			},
 		},

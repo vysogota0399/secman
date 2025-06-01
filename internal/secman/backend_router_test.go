@@ -73,7 +73,7 @@ func TestBackendRouter(t *testing.T) {
 		},
 	})
 
-	router, err := NewBackendRouter(be)
+	router, err := NewBackendRouter(be, NewLogger(t))
 	assert.NoError(t, err)
 
 	tk := []struct {

@@ -65,6 +65,8 @@ func NewTestCore(t *testing.T, config *config.Config, isCoreInitialized bool) (*
 	mockCoreRepository.EXPECT().IsCoreInitialized(context.Background()).Return(isCoreInitialized, nil)
 
 	return NewCore(
+		"test",
+		"test",
 		mockBarrier,
 		l,
 		NewLogger(t),

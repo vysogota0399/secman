@@ -3,6 +3,7 @@ package secman
 import (
 	"context"
 	"path"
+	"strings"
 	"time"
 )
 
@@ -36,7 +37,7 @@ func (s *LogicalStorage) Get(ctx context.Context, path string) (Entry, error) {
 		return Entry{}, err
 	}
 
-	entry.Key = path
+	entry.Key = strings.TrimPrefix(entry.Path, s.prefix)
 	return entry, nil
 }
 
@@ -53,7 +54,20 @@ func (s *LogicalStorage) Delete(ctx context.Context, key string) error {
 }
 
 func (s *LogicalStorage) List(ctx context.Context, key string) ([]Entry, error) {
-	return s.b.List(ctx, s.relativePath(key))
+	entries, err := s.b.List(ctx, s.relativePath(key))
+	if err != nil {
+		return nil, err
+	}
+
+	for i, entry := range entries {
+		entries[i] = Entry{
+			Value: entry.Value,
+			Key:   strings.TrimPrefix(entry.Path, s.prefix),
+			Path:  entry.Path,
+		}
+	}
+
+	return entries, nil
 }
 
 func (s *LogicalStorage) relativePath(p string) string {

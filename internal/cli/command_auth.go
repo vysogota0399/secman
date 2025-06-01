@@ -67,9 +67,9 @@ func (c *AuthCommand) enableAuth(ctx context.Context, o *Operation, b *strings.B
 		return err
 	}
 
-	_, statusCode, err := o.Client.Post(ctx, "sys/auth/enable", bytes.NewBuffer(jsonPayload), headers)
+	resp, err := o.Client.Post(ctx, "sys/auth/enable", bytes.NewBuffer(jsonPayload), headers)
 	if err != nil {
-		if statusCode == http.StatusNotFound {
+		if resp.Status == http.StatusNotFound {
 			return errors.New("auth engine not found. If you want to enable such auth, enable engine first")
 		}
 

@@ -33,7 +33,7 @@ func (b *UnsealedBarrier) Get(ctx context.Context, path string) (secman.Entry, e
 		return secman.Entry{}, fmt.Errorf("meta barrier: get key %s failed error: %w", path, err)
 	}
 
-	return secman.Entry{Value: string(res.Value), Key: res.Key}, nil
+	return secman.Entry{Value: string(res.Value), Path: res.Path}, nil
 }
 
 func (b *UnsealedBarrier) GetOk(ctx context.Context, path string) (secman.Entry, bool, error) {
@@ -57,7 +57,7 @@ func (b *UnsealedBarrier) List(ctx context.Context, path string) ([]secman.Entry
 
 	entries := make([]secman.Entry, len(physicalEntries))
 	for i, pe := range physicalEntries {
-		entries[i] = secman.Entry{Value: string(pe.Value), Key: pe.Key}
+		entries[i] = secman.Entry{Value: string(pe.Value), Path: pe.Path}
 	}
 
 	return entries, nil

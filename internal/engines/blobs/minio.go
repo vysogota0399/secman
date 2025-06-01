@@ -23,10 +23,11 @@ func NewMinio(lg *logging.ZapLogger) *Minio {
 }
 
 func (s3 *Minio) Start(ba *Backend) error {
-	cfg := ba.blobParams.Adapter
-	client, err := minio.New(cfg.URL, &minio.Options{
-		Creds:  credentials.NewStaticV4(cfg.User, cfg.Password, ""),
-		Secure: cfg.SSL,
+	secure := ba.blobParams.S3SSL == "true"
+
+	client, err := minio.New(ba.blobParams.S3URL, &minio.Options{
+		Creds:  credentials.NewStaticV4(ba.blobParams.S3User, ba.blobParams.S3Pass, ""),
+		Secure: secure,
 	})
 	if err != nil {
 		return fmt.Errorf("minio: failed to create client %w", err)
@@ -34,18 +35,18 @@ func (s3 *Minio) Start(ba *Backend) error {
 
 	s3.client = client
 
-	exists, err := s3.client.BucketExists(context.Background(), cfg.Bucket)
+	exists, err := s3.client.BucketExists(context.Background(), ba.blobParams.S3Bucket)
 	if err != nil {
-		return fmt.Errorf("minio: failed to check if bucket exists %s %w", cfg.Bucket, err)
+		return fmt.Errorf("minio: failed to check if bucket exists %s %w", ba.blobParams.S3Bucket, err)
 	}
 
 	if !exists {
-		if err := s3.createBucket(context.Background(), cfg.Bucket); err != nil {
-			return fmt.Errorf("minio: failed to create bucket %s %w", cfg.Bucket, err)
+		if err := s3.createBucket(context.Background(), ba.blobParams.S3Bucket); err != nil {
+			return fmt.Errorf("minio: failed to create bucket %s %w", ba.blobParams.S3Bucket, err)
 		}
 	}
 
-	s3.bucket = cfg.Bucket
+	s3.bucket = ba.blobParams.S3Bucket
 	return nil
 }
 

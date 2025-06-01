@@ -37,10 +37,13 @@ func TestNewParamsRepository(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := NewParamsRepository(tt.args.b, tt.args.lg)
 			if got == nil {
-				t.Error("NewParamsRepository() returned nil")
+				t.Fatal("NewParamsRepository() returned nil")
+			}
+			if got.storage == nil {
+				t.Fatal("NewParamsRepository().storage is nil")
 			}
 			if got.storage.Prefix() != "auth/logopass" {
-				t.Errorf("NewParamsRepository().storage.Prefix() = %v, want %v", got.storage.Prefix(), "auth/logopass")
+				t.Fatalf("NewParamsRepository().storage.Prefix() = %v, want %v", got.storage.Prefix(), "auth/logopass")
 			}
 		})
 	}

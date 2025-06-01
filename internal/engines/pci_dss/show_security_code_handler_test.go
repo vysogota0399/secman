@@ -48,14 +48,14 @@ func TestBackend_ShowSecurityCodeHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token":          "test_card_token",
+						"pan_token":          "test_pan_token",
 						"security_code_token": "test_security_code_token",
 					},
 				},
 			},
 			want: &secman.LogicalResponse{
 				Status:  http.StatusOK,
-				Message: gin.H{"security_code": "123"},
+				Message: gin.H{"value": "123"},
 			},
 			wantErr: false,
 			prepare: func(mockStorage *secman.MockILogicalStorage, b *Backend) {
@@ -76,7 +76,7 @@ func TestBackend_ShowSecurityCodeHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token":          "test_card_token",
+						"pan_token":          "test_pan_token",
 						"security_code_token": "test_security_code_token",
 					},
 				},
@@ -104,7 +104,7 @@ func TestBackend_ShowSecurityCodeHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token":          "test_card_token",
+						"pan_token":          "test_pan_token",
 						"security_code_token": "test_security_code_token",
 					},
 				},

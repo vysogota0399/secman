@@ -13,7 +13,7 @@ func (b *Backend) ShowExpiryDateHandler(ctx context.Context, req *secman.Logical
 	b.beMtx.RLock()
 	defer b.beMtx.RUnlock()
 
-	cardToken := params.Params["card_token"]
+	cardToken := params.Params["pan_token"]
 	expiryDateToken := params.Params["expiry_date_token"]
 
 	expiryDate, ok, err := b.repo.ValueOk(ctx, cardToken+"/expiry_date/"+expiryDateToken)

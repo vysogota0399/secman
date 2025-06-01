@@ -9,6 +9,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/vysogota0399/secman/internal/logging"
+	"go.uber.org/zap"
 )
 
 type BackendRouterNode struct {
@@ -49,9 +51,10 @@ func (n *BackendRouterNode) ProcessPath(path string) (bool, error) {
 // Path and invoke the corresponding handler.
 type BackendRouter struct {
 	router map[string][]*BackendRouterNode
+	lg     *logging.ZapLogger
 }
 
-func NewBackendRouter(be LogicalBackend) (*BackendRouter, error) {
+func NewBackendRouter(be LogicalBackend, lg *logging.ZapLogger) (*BackendRouter, error) {
 	router := map[string][]*BackendRouterNode{}
 
 	for method, paths := range be.Paths() {
@@ -87,7 +90,7 @@ func NewBackendRouter(be LogicalBackend) (*BackendRouter, error) {
 		})
 	}
 
-	return &BackendRouter{router: router}, nil
+	return &BackendRouter{router: router, lg: lg}, nil
 }
 
 func (r *BackendRouter) Handle(ctx *gin.Context) (*LogicalResponse, error) {
@@ -105,6 +108,7 @@ func (r *BackendRouter) Handle(ctx *gin.Context) (*LogicalResponse, error) {
 	for _, node := range nodes {
 		matched, err := node.ProcessPath(path)
 		if err != nil {
+			r.lg.ErrorCtx(ctx.Request.Context(), "backend router: process path failed", zap.Error(err), zap.String("path", path))
 			return &LogicalResponse{
 				Status:  http.StatusBadRequest,
 				Message: gin.H{"error": "unsupported path params"},

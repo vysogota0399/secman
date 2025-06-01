@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -41,7 +40,6 @@ func TestNewBackend(t *testing.T) {
 			want: &Backend{
 				lg:        &logging.ZapLogger{},
 				logopass:  &Logopass{},
-				beMtx:     sync.RWMutex{},
 				exist:     &atomic.Bool{},
 				params:    &logopass_repositories.Params{},
 				tokenReg:  regexp.MustCompile(`Bearer\s+(\S+)`),
@@ -80,7 +78,6 @@ func TestNewBackend(t *testing.T) {
 
 func TestBackend_Router(t *testing.T) {
 	type fields struct {
-		beMtx     sync.RWMutex
 		exist     *atomic.Bool
 		params    *logopass_repositories.Params
 		lg        *logging.ZapLogger
@@ -97,7 +94,6 @@ func TestBackend_Router(t *testing.T) {
 		{
 			name: "returns nil when router is not set",
 			fields: fields{
-				beMtx:     sync.RWMutex{},
 				exist:     &atomic.Bool{},
 				params:    &logopass_repositories.Params{},
 				lg:        &logging.ZapLogger{},
@@ -111,7 +107,6 @@ func TestBackend_Router(t *testing.T) {
 		{
 			name: "returns set router",
 			fields: fields{
-				beMtx:     sync.RWMutex{},
 				exist:     &atomic.Bool{},
 				params:    &logopass_repositories.Params{},
 				lg:        &logging.ZapLogger{},
@@ -126,7 +121,6 @@ func TestBackend_Router(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Backend{
-				beMtx:     tt.fields.beMtx,
 				exist:     tt.fields.exist,
 				params:    tt.fields.params,
 				lg:        tt.fields.lg,
@@ -144,7 +138,6 @@ func TestBackend_Router(t *testing.T) {
 
 func TestBackend_SetRouter(t *testing.T) {
 	type fields struct {
-		beMtx     sync.RWMutex
 		exist     *atomic.Bool
 		params    *logopass_repositories.Params
 		lg        *logging.ZapLogger
@@ -164,7 +157,6 @@ func TestBackend_SetRouter(t *testing.T) {
 		{
 			name: "sets router and can be retrieved",
 			fields: fields{
-				beMtx:     sync.RWMutex{},
 				exist:     &atomic.Bool{},
 				params:    &logopass_repositories.Params{},
 				lg:        &logging.ZapLogger{},
@@ -181,7 +173,6 @@ func TestBackend_SetRouter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Backend{
-				beMtx:     tt.fields.beMtx,
 				exist:     tt.fields.exist,
 				params:    tt.fields.params,
 				lg:        tt.fields.lg,
@@ -200,7 +191,6 @@ func TestBackend_SetRouter(t *testing.T) {
 
 func TestBackend_RootPath(t *testing.T) {
 	type fields struct {
-		beMtx     sync.RWMutex
 		exist     *atomic.Bool
 		params    *logopass_repositories.Params
 		lg        *logging.ZapLogger
@@ -217,7 +207,6 @@ func TestBackend_RootPath(t *testing.T) {
 		{
 			name: "returns correct root path",
 			fields: fields{
-				beMtx:     sync.RWMutex{},
 				exist:     &atomic.Bool{},
 				params:    &logopass_repositories.Params{},
 				lg:        &logging.ZapLogger{},
@@ -232,7 +221,6 @@ func TestBackend_RootPath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Backend{
-				beMtx:     tt.fields.beMtx,
 				exist:     tt.fields.exist,
 				params:    tt.fields.params,
 				lg:        tt.fields.lg,
@@ -250,7 +238,6 @@ func TestBackend_RootPath(t *testing.T) {
 
 func TestBackend_Help(t *testing.T) {
 	type fields struct {
-		beMtx     sync.RWMutex
 		exist     *atomic.Bool
 		params    *logopass_repositories.Params
 		lg        *logging.ZapLogger
@@ -267,7 +254,6 @@ func TestBackend_Help(t *testing.T) {
 		{
 			name: "returns correct help message",
 			fields: fields{
-				beMtx:     sync.RWMutex{},
 				exist:     &atomic.Bool{},
 				params:    &logopass_repositories.Params{},
 				lg:        &logging.ZapLogger{},
@@ -282,7 +268,6 @@ func TestBackend_Help(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Backend{
-				beMtx:     tt.fields.beMtx,
 				exist:     tt.fields.exist,
 				params:    tt.fields.params,
 				lg:        tt.fields.lg,
@@ -300,7 +285,6 @@ func TestBackend_Help(t *testing.T) {
 
 func TestBackend_Paths(t *testing.T) {
 	type fields struct {
-		beMtx     sync.RWMutex
 		exist     *atomic.Bool
 		params    *logopass_repositories.Params
 		lg        *logging.ZapLogger
@@ -317,7 +301,6 @@ func TestBackend_Paths(t *testing.T) {
 		{
 			name: "returns all available paths",
 			fields: fields{
-				beMtx:     sync.RWMutex{},
 				exist:     &atomic.Bool{},
 				params:    &logopass_repositories.Params{},
 				lg:        &logging.ZapLogger{},
@@ -360,7 +343,6 @@ func TestBackend_Paths(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Backend{
-				beMtx:     tt.fields.beMtx,
 				exist:     tt.fields.exist,
 				params:    tt.fields.params,
 				lg:        tt.fields.lg,
@@ -496,7 +478,7 @@ func TestBackend_Enable(t *testing.T) {
 			},
 			want: &secman.LogicalResponse{
 				Status:  http.StatusNotModified,
-				Message: "logopass: already enabled",
+				Message: gin.H{"message": "logopass: already enabled"},
 			},
 			wantErr: false,
 			setup: func(be *Backend) {
@@ -520,7 +502,7 @@ func TestBackend_Enable(t *testing.T) {
 			},
 			want: &secman.LogicalResponse{
 				Status:  http.StatusBadRequest,
-				Message: "body is invalid or empty",
+				Message: gin.H{"error": "body is invalid or empty"},
 			},
 			wantErr: false,
 		},

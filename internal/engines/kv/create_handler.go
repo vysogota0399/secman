@@ -25,7 +25,10 @@ func (b *Backend) CreateHandler(ctx context.Context, req *secman.LogicalRequest,
 	}
 
 	if ok {
-		return nil, fmt.Errorf("key already exists")
+		return &secman.LogicalResponse{
+			Status:  http.StatusConflict,
+			Message: gin.H{"error": "key already exists"},
+		}, nil
 	}
 
 	if err := b.repo.Create(ctx, createParams.Key, createParams.Value); err != nil {

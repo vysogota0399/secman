@@ -9,6 +9,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/gin-gonic/gin"
 	logopass_repositories "github.com/vysogota0399/secman/internal/engines/logopass/repositories"
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
@@ -144,7 +145,7 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 	if b.exist.Load() {
 		return &secman.LogicalResponse{
 			Status:  http.StatusNotModified,
-			Message: "logopass: already enabled",
+			Message: gin.H{"message": "logopass: already enabled"},
 		}, nil
 	}
 
@@ -155,7 +156,7 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 		b.lg.DebugCtx(ctx, "logopass: enable failed error when binding json", zap.Error(err))
 		return &secman.LogicalResponse{
 			Status:  http.StatusBadRequest,
-			Message: "body is invalid or empty",
+			Message: gin.H{"error": "body is invalid or empty"},
 		}, nil
 	}
 

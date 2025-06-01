@@ -26,7 +26,7 @@ func main() {
 		return
 	}
 
-	client, err := cli.NewClient(s, cfg)
+	client, err := cli.NewClient(s, cfg, lg)
 	if err != nil {
 		os.Stderr.WriteString("Failed to create client: " + err.Error() + "\n")
 		return
@@ -38,6 +38,6 @@ func main() {
 		s,
 		lg,
 		cfg,
-		client,
+		cli.NewClientCacheWrapper(client, s, lg),
 	)
 }

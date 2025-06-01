@@ -3,7 +3,6 @@ package pci_dss
 import (
 	"context"
 	"reflect"
-	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -19,7 +18,6 @@ func TestBackend_UpdateMetadataHandler(t *testing.T) {
 	lg := secman.NewLogger(t)
 
 	type fields struct {
-		beMtx    sync.RWMutex
 		exist    *atomic.Bool
 		router   *secman.BackendRouter
 		repo     *Repository
@@ -42,7 +40,6 @@ func TestBackend_UpdateMetadataHandler(t *testing.T) {
 		{
 			name: "successful metadata update",
 			fields: fields{
-				beMtx:    sync.RWMutex{},
 				exist:    &atomic.Bool{},
 				router:   &secman.BackendRouter{},
 				repo:     &Repository{},
@@ -54,7 +51,7 @@ func TestBackend_UpdateMetadataHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token": "test-token",
+						"pan_token": "test-token",
 					},
 					Body: &MetadataBody{
 						Metadata: map[string]string{
@@ -67,7 +64,7 @@ func TestBackend_UpdateMetadataHandler(t *testing.T) {
 			want: &secman.LogicalResponse{
 				Status: 200,
 				Message: gin.H{
-					"metadata": map[string]string{
+					"value": map[string]string{
 						"owner": "new-owner",
 						"type":  "new-type",
 					},
@@ -88,7 +85,6 @@ func TestBackend_UpdateMetadataHandler(t *testing.T) {
 		{
 			name: "metadata not found",
 			fields: fields{
-				beMtx:    sync.RWMutex{},
 				exist:    &atomic.Bool{},
 				router:   &secman.BackendRouter{},
 				repo:     &Repository{},
@@ -100,7 +96,7 @@ func TestBackend_UpdateMetadataHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token": "non-existent-token",
+						"pan_token": "non-existent-token",
 					},
 					Body: &MetadataBody{
 						Metadata: map[string]string{
@@ -125,7 +121,6 @@ func TestBackend_UpdateMetadataHandler(t *testing.T) {
 		{
 			name: "storage error",
 			fields: fields{
-				beMtx:    sync.RWMutex{},
 				exist:    &atomic.Bool{},
 				router:   &secman.BackendRouter{},
 				repo:     &Repository{},
@@ -137,7 +132,7 @@ func TestBackend_UpdateMetadataHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token": "test-token",
+						"pan_token": "test-token",
 					},
 					Body: &MetadataBody{
 						Metadata: map[string]string{
@@ -150,7 +145,7 @@ func TestBackend_UpdateMetadataHandler(t *testing.T) {
 			wantErr: true,
 			prepare: func(mockStorage *secman.MockILogicalStorage, b *Backend) {
 				mockStorage.EXPECT().
-					Get(gomock.Any(), "secrets/pci_dss/test-token/metadata").
+					Get(gomock.Any(), "unsealed/secrets/pci_dss/test-token/metadata").
 					Return(secman.Entry{}, assert.AnError)
 			},
 		},
@@ -159,7 +154,6 @@ func TestBackend_UpdateMetadataHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockStorage := secman.NewMockILogicalStorage(ctrl)
 			b := &Backend{
-				beMtx:    tt.fields.beMtx,
 				exist:    tt.fields.exist,
 				router:   tt.fields.router,
 				repo:     tt.fields.repo,

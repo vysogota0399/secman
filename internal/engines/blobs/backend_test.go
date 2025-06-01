@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -67,7 +66,6 @@ func TestNewBackend(t *testing.T) {
 
 func TestBackend_Help(t *testing.T) {
 	type fields struct {
-		beMtx      sync.RWMutex
 		exist      *atomic.Bool
 		router     *secman.BackendRouter
 		repo       *Repository
@@ -84,7 +82,6 @@ func TestBackend_Help(t *testing.T) {
 		{
 			name: "returns correct help message",
 			fields: fields{
-				beMtx:      sync.RWMutex{},
 				exist:      &atomic.Bool{},
 				router:     nil,
 				repo:       nil,
@@ -99,7 +96,6 @@ func TestBackend_Help(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Backend{
-				beMtx:      tt.fields.beMtx,
 				exist:      tt.fields.exist,
 				router:     tt.fields.router,
 				repo:       tt.fields.repo,
@@ -117,7 +113,6 @@ func TestBackend_Help(t *testing.T) {
 
 func TestBackend_SetRouter(t *testing.T) {
 	type fields struct {
-		beMtx      sync.RWMutex
 		exist      *atomic.Bool
 		router     *secman.BackendRouter
 		repo       *Repository
@@ -137,7 +132,6 @@ func TestBackend_SetRouter(t *testing.T) {
 		{
 			name: "sets router correctly",
 			fields: fields{
-				beMtx:      sync.RWMutex{},
 				exist:      &atomic.Bool{},
 				router:     nil,
 				repo:       nil,
@@ -154,7 +148,6 @@ func TestBackend_SetRouter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Backend{
-				beMtx:      tt.fields.beMtx,
 				exist:      tt.fields.exist,
 				router:     tt.fields.router,
 				repo:       tt.fields.repo,
@@ -173,7 +166,6 @@ func TestBackend_SetRouter(t *testing.T) {
 
 func TestBackend_Router(t *testing.T) {
 	type fields struct {
-		beMtx      sync.RWMutex
 		exist      *atomic.Bool
 		router     *secman.BackendRouter
 		repo       *Repository
@@ -190,7 +182,6 @@ func TestBackend_Router(t *testing.T) {
 		{
 			name: "returns router correctly",
 			fields: fields{
-				beMtx:      sync.RWMutex{},
 				exist:      &atomic.Bool{},
 				router:     &secman.BackendRouter{},
 				repo:       nil,
@@ -205,7 +196,6 @@ func TestBackend_Router(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Backend{
-				beMtx:      tt.fields.beMtx,
 				exist:      tt.fields.exist,
 				router:     tt.fields.router,
 				repo:       tt.fields.repo,
@@ -223,7 +213,6 @@ func TestBackend_Router(t *testing.T) {
 
 func TestBackend_RootPath(t *testing.T) {
 	type fields struct {
-		beMtx      sync.RWMutex
 		exist      *atomic.Bool
 		router     *secman.BackendRouter
 		repo       *Repository
@@ -240,7 +229,6 @@ func TestBackend_RootPath(t *testing.T) {
 		{
 			name: "returns correct root path",
 			fields: fields{
-				beMtx:      sync.RWMutex{},
 				exist:      &atomic.Bool{},
 				router:     nil,
 				repo:       nil,
@@ -255,7 +243,6 @@ func TestBackend_RootPath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Backend{
-				beMtx:      tt.fields.beMtx,
 				exist:      tt.fields.exist,
 				router:     tt.fields.router,
 				repo:       tt.fields.repo,
@@ -273,7 +260,6 @@ func TestBackend_RootPath(t *testing.T) {
 
 func TestBackend_rndToken(t *testing.T) {
 	type fields struct {
-		beMtx      sync.RWMutex
 		exist      *atomic.Bool
 		router     *secman.BackendRouter
 		repo       *Repository
@@ -290,7 +276,6 @@ func TestBackend_rndToken(t *testing.T) {
 		{
 			name: "generates random token",
 			fields: fields{
-				beMtx:      sync.RWMutex{},
 				exist:      &atomic.Bool{},
 				router:     nil,
 				repo:       nil,
@@ -305,7 +290,6 @@ func TestBackend_rndToken(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Backend{
-				beMtx:      tt.fields.beMtx,
 				exist:      tt.fields.exist,
 				router:     tt.fields.router,
 				repo:       tt.fields.repo,
@@ -334,7 +318,6 @@ func TestBackend_rndToken(t *testing.T) {
 
 func TestBackend_Paths(t *testing.T) {
 	type fields struct {
-		beMtx      sync.RWMutex
 		exist      *atomic.Bool
 		router     *secman.BackendRouter
 		repo       *Repository
@@ -351,7 +334,6 @@ func TestBackend_Paths(t *testing.T) {
 		{
 			name: "returns correct paths configuration",
 			fields: fields{
-				beMtx:      sync.RWMutex{},
 				exist:      &atomic.Bool{},
 				router:     nil,
 				repo:       nil,
@@ -416,7 +398,6 @@ func TestBackend_Paths(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Backend{
-				beMtx:      tt.fields.beMtx,
 				exist:      tt.fields.exist,
 				router:     tt.fields.router,
 				repo:       tt.fields.repo,
@@ -511,13 +492,11 @@ func TestBackend_Enable(t *testing.T) {
 								"Content-Type": []string{"application/json"},
 							},
 							Body: io.NopCloser(strings.NewReader(`{
-								"adapter": {
-									"url": "http://localhost:9000",
-									"user": "minioadmin",
-									"password": "minioadmin",
-									"ssl": false,
-									"bucket": "test-bucket"
-								}
+								"s3_url": "http://localhost:9000",
+								"s3_user": "minioadmin",
+								"s3_pass": "minioadmin",
+								"s3_ssl": "false",
+								"s3_bucket": "test-bucket"
 							}`)),
 						},
 					},
@@ -525,7 +504,7 @@ func TestBackend_Enable(t *testing.T) {
 			},
 			want: &secman.LogicalResponse{
 				Status:  http.StatusOK,
-				Message: "blobs enabled",
+				Message: gin.H{"message": "blobs enabled"},
 			},
 			wantErr: false,
 			setup: func(b *Backend, barrier *secman.MockBarrierStorage, logicalStorage *secman.MockILogicalStorage) {
@@ -555,13 +534,11 @@ func TestBackend_Enable(t *testing.T) {
 								"Content-Type": []string{"application/json"},
 							},
 							Body: io.NopCloser(strings.NewReader(`{
-								"adapter": {
-									"url": "http://localhost:9000",
-									"user": "minioadmin",
-									"password": "minioadmin",
-									"ssl": false,
-									"bucket": "test-bucket"
-								}
+								"s3_url": "http://localhost:9000",
+								"s3_user": "minioadmin",
+								"s3_pass": "minioadmin",
+								"s3_ssl": "false",
+								"s3_bucket": "test-bucket"
 							}`)),
 						},
 					},
@@ -569,7 +546,7 @@ func TestBackend_Enable(t *testing.T) {
 			},
 			want: &secman.LogicalResponse{
 				Status:  http.StatusNotModified,
-				Message: "blobs: already enabled",
+				Message: gin.H{"error": "blobs: already enabled"},
 			},
 			wantErr: false,
 			setup: func(b *Backend, barrier *secman.MockBarrierStorage, logicalStorage *secman.MockILogicalStorage) {
@@ -586,22 +563,14 @@ func TestBackend_Enable(t *testing.T) {
 							Header: http.Header{
 								"Content-Type": []string{"application/json"},
 							},
-							Body: io.NopCloser(strings.NewReader(`{
-								"adapter": {
-									"url": "",
-									"user": "",
-									"password": "",
-									"ssl": false,
-									"bucket": ""
-								}
-							}`)),
+							Body: io.NopCloser(strings.NewReader(`{"s3_url": "","s3_user": "","s3_pass": "","s3_ssl": "false","s3_bucket": ""}`)),
 						},
 					},
 				},
 			},
 			want: &secman.LogicalResponse{
 				Status:  http.StatusBadRequest,
-				Message: "invalid request, missing required field: url",
+				Message: gin.H{"error": "invalid request, missing required field: s3_url"},
 			},
 			wantErr: false,
 			setup: func(b *Backend, barrier *secman.MockBarrierStorage, logicalStorage *secman.MockILogicalStorage) {
@@ -619,13 +588,11 @@ func TestBackend_Enable(t *testing.T) {
 								"Content-Type": []string{"application/json"},
 							},
 							Body: io.NopCloser(strings.NewReader(`{
-								"adapter": {
-									"url": "invalid-url",
-									"user": "minioadmin",
-									"password": "minioadmin",
-									"ssl": "not-a-boolean",
-									"bucket": "test-bucket"
-								}
+								"s3_url": "invalid-url",
+								"s3_user": "minioadmin",
+								"s3_pass": "minioadmin",
+								"s3_ssl": false,
+								"s3_bucket": "test-bucket"
 							}`)),
 						},
 					},
@@ -633,7 +600,7 @@ func TestBackend_Enable(t *testing.T) {
 			},
 			want: &secman.LogicalResponse{
 				Status:  http.StatusBadRequest,
-				Message: "invalid request",
+				Message: gin.H{"error": "invalid request"},
 			},
 			wantErr: false,
 			setup: func(b *Backend, barrier *secman.MockBarrierStorage, logicalStorage *secman.MockILogicalStorage) {
@@ -651,13 +618,11 @@ func TestBackend_Enable(t *testing.T) {
 								"Content-Type": []string{"application/json"},
 							},
 							Body: io.NopCloser(strings.NewReader(`{
-								"adapter": {
-									"url": "http://localhost:9000",
-									"user": "",
-									"password": "",
-									"ssl": false,
-									"bucket": "test-bucket"
-								}
+								"s3_url": "http://localhost:9000",
+								"s3_user": "",
+								"s3_pass": "",
+								"s3_ssl": "false",
+								"s3_bucket": "test-bucket"
 							}`)),
 						},
 					},
@@ -665,7 +630,7 @@ func TestBackend_Enable(t *testing.T) {
 			},
 			want: &secman.LogicalResponse{
 				Status:  http.StatusBadRequest,
-				Message: "invalid request, missing required field: user",
+				Message: gin.H{"error": "invalid request, missing required field: s3_user"},
 			},
 			wantErr: false,
 			setup: func(b *Backend, barrier *secman.MockBarrierStorage, logicalStorage *secman.MockILogicalStorage) {

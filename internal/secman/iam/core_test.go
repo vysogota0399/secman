@@ -77,7 +77,6 @@ func TestCore_Authorize(t *testing.T) {
 		lg            *logging.ZapLogger
 		sessRep       SessionsRepository
 		usersRep      UsersRepository
-		registrateMtx sync.Mutex
 	}
 	type args struct {
 		ctx context.Context
@@ -97,7 +96,6 @@ func TestCore_Authorize(t *testing.T) {
 				lg:            mockLogger,
 				sessRep:       mockSessRep,
 				usersRep:      mockUsersRep,
-				registrateMtx: sync.Mutex{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -117,7 +115,6 @@ func TestCore_Authorize(t *testing.T) {
 				lg:            mockLogger,
 				sessRep:       mockSessRep,
 				usersRep:      mockUsersRep,
-				registrateMtx: sync.Mutex{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -138,7 +135,6 @@ func TestCore_Authorize(t *testing.T) {
 				lg:            tt.fields.lg,
 				sessRep:       tt.fields.sessRep,
 				usersRep:      tt.fields.usersRep,
-				registrateMtx: tt.fields.registrateMtx,
 			}
 
 			if tt.prepare != nil {
@@ -177,7 +173,6 @@ func TestCore_Login(t *testing.T) {
 		lg            *logging.ZapLogger
 		sessRep       SessionsRepository
 		usersRep      UsersRepository
-		registrateMtx sync.Mutex
 	}
 	type args struct {
 		ctx     context.Context
@@ -196,7 +191,6 @@ func TestCore_Login(t *testing.T) {
 				lg:            mockLogger,
 				sessRep:       mockSessRep,
 				usersRep:      mockUsersRep,
-				registrateMtx: sync.Mutex{},
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -216,7 +210,6 @@ func TestCore_Login(t *testing.T) {
 				lg:            tt.fields.lg,
 				sessRep:       tt.fields.sessRep,
 				usersRep:      tt.fields.usersRep,
-				registrateMtx: tt.fields.registrateMtx,
 			}
 
 			if tt.prepare != nil {
@@ -247,7 +240,6 @@ func TestCore_Register(t *testing.T) {
 		lg            *logging.ZapLogger
 		sessRep       SessionsRepository
 		usersRep      UsersRepository
-		registrateMtx sync.Mutex
 	}
 	type args struct {
 		ctx  context.Context
@@ -266,7 +258,6 @@ func TestCore_Register(t *testing.T) {
 				lg:            mockLogger,
 				sessRep:       mockSessRep,
 				usersRep:      mockUsersRep,
-				registrateMtx: sync.Mutex{},
 			},
 			args: args{
 				ctx:  context.Background(),
@@ -299,7 +290,6 @@ func TestCore_Register(t *testing.T) {
 				lg:            mockLogger,
 				sessRep:       mockSessRep,
 				usersRep:      mockUsersRep,
-				registrateMtx: sync.Mutex{},
 			},
 			args: args{
 				ctx:  context.Background(),
@@ -319,7 +309,6 @@ func TestCore_Register(t *testing.T) {
 				lg:            tt.fields.lg,
 				sessRep:       tt.fields.sessRep,
 				usersRep:      tt.fields.usersRep,
-				registrateMtx: tt.fields.registrateMtx,
 			}
 
 			if tt.prepare != nil {
@@ -352,7 +341,6 @@ func TestCore_GetUser(t *testing.T) {
 		lg            *logging.ZapLogger
 		sessRep       SessionsRepository
 		usersRep      UsersRepository
-		registrateMtx sync.Mutex
 	}
 	type args struct {
 		ctx   context.Context
@@ -372,7 +360,6 @@ func TestCore_GetUser(t *testing.T) {
 				lg:            mockLogger,
 				sessRep:       mockSessRep,
 				usersRep:      mockUsersRep,
-				registrateMtx: sync.Mutex{},
 			},
 			args: args{
 				ctx:   context.Background(),
@@ -392,7 +379,6 @@ func TestCore_GetUser(t *testing.T) {
 				lg:            mockLogger,
 				sessRep:       mockSessRep,
 				usersRep:      mockUsersRep,
-				registrateMtx: sync.Mutex{},
 			},
 			args: args{
 				ctx:   context.Background(),
@@ -413,7 +399,6 @@ func TestCore_GetUser(t *testing.T) {
 				lg:            tt.fields.lg,
 				sessRep:       tt.fields.sessRep,
 				usersRep:      tt.fields.usersRep,
-				registrateMtx: tt.fields.registrateMtx,
 			}
 
 			if tt.prepare != nil {

@@ -30,3 +30,6 @@ Thumbs.db
 main
 secman
 server
+secman_server
+
+config.yml

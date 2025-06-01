@@ -55,7 +55,7 @@ func TestBackend_ShowHandler(t *testing.T) {
 			want: &secman.LogicalResponse{
 				Status: 200,
 				Message: gin.H{
-					"key": "test-value",
+					"value": "test-value",
 				},
 			},
 			wantErr: false,
@@ -63,7 +63,7 @@ func TestBackend_ShowHandler(t *testing.T) {
 				mockStorage.EXPECT().
 					GetOk(gomock.Any(), gomock.Any()).
 					Return(secman.Entry{
-						Key:   "test-key",
+						Path:  "secrets/kv/test-key",
 						Value: "test-value",
 					}, true, nil)
 			},

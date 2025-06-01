@@ -45,7 +45,7 @@ func TestBackend_deleteHandler(t *testing.T) {
 					Delete(gomock.Any(), "test-token").
 					Return(nil)
 				barrier.EXPECT().
-					Delete(gomock.Any(), "secrets/blobs/test-token/metadata").
+					Delete(gomock.Any(), "unsealed/secrets/blobs/test-token/metadata").
 					Return(nil)
 				b.s3.(*MockS3).EXPECT().
 					Delete(gomock.Any(), "test-blob-key").

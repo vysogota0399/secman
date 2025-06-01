@@ -16,7 +16,8 @@ import (
 
 type PhysicalEntry struct {
 	Value []byte `json:"value"`
-	Key   string `json:"key"`
+	// Path is the physical path of the entry in the storage
+	Path string `json:"path"`
 }
 
 // IStorage is an interface that defines the methods for a storage
@@ -49,9 +50,13 @@ type Core struct {
 	RootTokens    IRootTokens
 	Router        ILogicalRouter
 	Auth          IAuth
+	BuildVersion  string
+	BuildDate     string
 }
 
 func NewCore(
+	buildVersion string,
+	buildDate string,
 	barrier IBarrier,
 	lc fx.Lifecycle,
 	log *logging.ZapLogger,
@@ -71,6 +76,8 @@ func NewCore(
 		RootTokens:    rootTokens,
 		Router:        router,
 		Auth:          auth,
+		BuildVersion:  buildVersion,
+		BuildDate:     buildDate,
 	}
 
 	lc.Append(

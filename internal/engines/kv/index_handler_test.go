@@ -53,11 +53,13 @@ func TestBackend_IndexHandler(t *testing.T) {
 				Message: gin.H{
 					"entries": []secman.Entry{
 						{
-							Key:   "key1",
+							Path:  "secrets/kv/key1",
+							Key:   "/key1",
 							Value: "value1",
 						},
 						{
-							Key:   "key2",
+							Path:  "secrets/kv/key2",
+							Key:   "/key2",
 							Value: "value2",
 						},
 					},
@@ -69,11 +71,11 @@ func TestBackend_IndexHandler(t *testing.T) {
 					List(gomock.Any(), gomock.Any()).
 					Return([]secman.Entry{
 						{
-							Key:   "key1",
+							Path:  "secrets/kv/key1",
 							Value: "value1",
 						},
 						{
-							Key:   "key2",
+							Path:  "secrets/kv/key2",
 							Value: "value2",
 						},
 					}, nil)

@@ -36,6 +36,14 @@ func (c *UnsealCommand) Parse(args []string) error {
 func (c *UnsealCommand) Handle(ctx context.Context, b *strings.Builder, o *Operation) error {
 	headers := map[string]string{}
 
+	// only admin can unseal the server
+	rootToken, ok := o.Session.GetAuthProvider("root_token").GetToken(o.Session)
+	if !ok {
+		return errors.New("ROOT_TOKEN is not set, please set it with the env variable")
+	}
+
+	o.Session.Login(rootToken, "root_token")
+
 	if err := o.Session.Authenticate(headers); err != nil {
 		return err
 	}
@@ -48,16 +56,16 @@ func (c *UnsealCommand) Handle(ctx context.Context, b *strings.Builder, o *Opera
 		return err
 	}
 
-	_, statusCode, err := o.Client.Post(ctx, "sys/unseal", bytes.NewReader(payload), headers)
+	resp, err := o.Client.Post(ctx, "sys/unseal", bytes.NewReader(payload), headers)
 	if err != nil {
+		if resp.Status == http.StatusBadRequest {
+			return errors.New("invalid unseal key parts. Enter valid unseal key again")
+		}
+
 		return err
 	}
 
-	if statusCode == http.StatusBadRequest {
-		return errors.New("invalid unseal key parts. Enter valid unseal key again")
-	}
-
-	resp, _, err := o.Client.Get(ctx, "sys/status", headers)
+	response, err := o.Client.Get(ctx, "sys/status", headers)
 	if err != nil {
 		return err
 	}
@@ -68,12 +76,12 @@ func (c *UnsealCommand) Handle(ctx context.Context, b *strings.Builder, o *Opera
 	}
 
 	var status StatusResponse
-	if err := json.NewDecoder(resp).Decode(&status); err != nil {
+	if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 		return err
 	}
 
 	b.WriteString("Server sealed: " + strconv.FormatBool(status.Sealed) + "\n")
-	b.WriteString("Barrier: " + status.Barrier + "\n")
+	b.WriteString("Barrier:       " + status.Barrier + "\n")
 
 	return nil
 }

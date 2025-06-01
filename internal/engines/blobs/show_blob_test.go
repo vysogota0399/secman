@@ -57,7 +57,7 @@ func TestBackend_showBlob(t *testing.T) {
 					Return(secman.Entry{Value: "test-blob-key"}, true, nil)
 
 				barrier.EXPECT().
-					Get(gomock.Any(), "secrets/blobs/test-token/metadata").
+					Get(gomock.Any(), "unsealed/secrets/blobs/test-token/metadata").
 					Return(secman.Entry{Value: `{"file_name":"test.txt"}`}, nil)
 
 				b.s3.(*MockS3).EXPECT().
@@ -112,7 +112,7 @@ func TestBackend_showBlob(t *testing.T) {
 					Return(secman.Entry{Value: "test-blob-key"}, true, nil)
 
 				barrier.EXPECT().
-					Get(gomock.Any(), "secrets/blobs/test-token/metadata").
+					Get(gomock.Any(), "unsealed/secrets/blobs/test-token/metadata").
 					Return(secman.Entry{}, secman.ErrEntryNotFound)
 			},
 		},
@@ -135,7 +135,7 @@ func TestBackend_showBlob(t *testing.T) {
 					Return(secman.Entry{Value: "test-blob-key"}, true, nil)
 
 				barrier.EXPECT().
-					Get(gomock.Any(), "secrets/blobs/test-token/metadata").
+					Get(gomock.Any(), "unsealed/secrets/blobs/test-token/metadata").
 					Return(secman.Entry{Value: `{"file_name":""}`}, nil)
 			},
 		},
@@ -158,7 +158,7 @@ func TestBackend_showBlob(t *testing.T) {
 					Return(secman.Entry{Value: "test-blob-key"}, true, nil)
 
 				barrier.EXPECT().
-					Get(gomock.Any(), "secrets/blobs/test-token/metadata").
+					Get(gomock.Any(), "unsealed/secrets/blobs/test-token/metadata").
 					Return(secman.Entry{Value: `{"file_name":"test.txt"}`}, nil)
 
 				b.s3.(*MockS3).EXPECT().

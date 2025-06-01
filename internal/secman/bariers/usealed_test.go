@@ -165,7 +165,7 @@ func TestUnsealedBarrier_Get(t *testing.T) {
 				path: "test/path",
 			},
 			want: secman.Entry{
-				Key:   "test/path",
+				Path:  "test/path",
 				Value: "test value",
 			},
 			wantErr: false,
@@ -173,7 +173,7 @@ func TestUnsealedBarrier_Get(t *testing.T) {
 				storage.EXPECT().
 					Get(gomock.Any(), "test/path").
 					Return(secman.PhysicalEntry{
-						Key:   "test/path",
+						Path:  "test/path",
 						Value: []byte("test value"),
 					}, nil)
 			},
@@ -251,7 +251,7 @@ func TestUnsealedBarrier_GetOk(t *testing.T) {
 				path: "test/path",
 			},
 			want: secman.Entry{
-				Key:   "test/path",
+				Path:  "test/path",
 				Value: "test value",
 			},
 			want1:   true,
@@ -260,7 +260,7 @@ func TestUnsealedBarrier_GetOk(t *testing.T) {
 				storage.EXPECT().
 					Get(gomock.Any(), "test/path").
 					Return(secman.PhysicalEntry{
-						Key:   "test/path",
+						Path:  "test/path",
 						Value: []byte("test value"),
 					}, nil)
 			},
@@ -343,11 +343,11 @@ func TestUnsealedBarrier_List(t *testing.T) {
 			},
 			want: []secman.Entry{
 				{
-					Key:   "test/path/1",
+					Path:  "test/path/1",
 					Value: "test value 1",
 				},
 				{
-					Key:   "test/path/2",
+					Path:  "test/path/2",
 					Value: "test value 2",
 				},
 			},
@@ -357,11 +357,11 @@ func TestUnsealedBarrier_List(t *testing.T) {
 					List(gomock.Any(), "test/path").
 					Return([]secman.PhysicalEntry{
 						{
-							Key:   "test/path/1",
+							Path:  "test/path/1",
 							Value: []byte("test value 1"),
 						},
 						{
-							Key:   "test/path/2",
+							Path:  "test/path/2",
 							Value: []byte("test value 2"),
 						},
 					}, nil)

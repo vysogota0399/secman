@@ -9,9 +9,11 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/gin-gonic/gin"
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
 	"github.com/vysogota0399/secman/internal/secman/cryptoutils"
+	"go.uber.org/zap"
 )
 
 var _ secman.LogicalBackend = &Backend{}
@@ -129,15 +131,11 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 }
 
 type BlobParams struct {
-	Adapter S3Adapter `json:"adapter" binding:"required"`
-}
-
-type S3Adapter struct {
-	URL      string `json:"url"`
-	User     string `json:"user"`
-	Password string `json:"password"`
-	SSL      bool   `json:"ssl"`
-	Bucket   string `json:"bucket"`
+	S3URL    string `json:"s3_url"`
+	S3User   string `json:"s3_user"`
+	S3Pass   string `json:"s3_pass"`
+	S3SSL    string `json:"s3_ssl"`
+	S3Bucket string `json:"s3_bucket"`
 }
 
 func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secman.LogicalResponse, error) {
@@ -147,49 +145,48 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 	if b.exist.Load() {
 		return &secman.LogicalResponse{
 			Status:  http.StatusNotModified,
-			Message: "blobs: already enabled",
+			Message: gin.H{"error": "blobs: already enabled"},
 		}, nil
 	}
 
 	blobParams := &BlobParams{}
 
 	if err := req.ShouldBindJSON(blobParams); err != nil {
+		b.lg.DebugCtx(ctx, "blobs: enable failed error when binding json", zap.String("error", err.Error()))
 		return &secman.LogicalResponse{
 			Status:  http.StatusBadRequest,
-			Message: "invalid request",
+			Message: gin.H{"error": "invalid request"},
 		}, nil
 	}
 
-	adapter := blobParams.Adapter
-
-	if adapter.URL == "" {
+	if blobParams.S3URL == "" {
 		return &secman.LogicalResponse{
 			Status:  http.StatusBadRequest,
-			Message: "invalid request, missing required field: url",
+			Message: gin.H{"error": "invalid request, missing required field: s3_url"},
 		}, nil
 	}
 
-	if adapter.User == "" {
+	if blobParams.S3User == "" {
 		return &secman.LogicalResponse{
 			Status:  http.StatusBadRequest,
-			Message: "invalid request, missing required field: user",
+			Message: gin.H{"error": "invalid request, missing required field: s3_user"},
 		}, nil
 	}
 
-	if adapter.Password == "" {
+	if blobParams.S3Pass == "" {
 		return &secman.LogicalResponse{
 			Status:  http.StatusBadRequest,
-			Message: "invalid request, missing required field: password",
+			Message: gin.H{"error": "invalid request, missing required field: s3_pass"},
 		}, nil
 	}
 
-	if adapter.SSL {
+	if blobParams.S3SSL == "" {
 		return &secman.LogicalResponse{
 			Status:  http.StatusBadRequest,
-			Message: "invalid request, missing required field: ssl",
+			Message: gin.H{"error": "invalid request, missing required field: s3_ssl"},
 		}, nil
 	}
-	blobParams.Adapter.Bucket = strings.ReplaceAll(b.repo.storage.Prefix(), "/", "-")
+	blobParams.S3Bucket = strings.ReplaceAll(b.repo.storage.Prefix(), "/", "-")
 
 	if err := b.repo.Enable(ctx, blobParams); err != nil {
 		return nil, fmt.Errorf("blobs: enable failed error when enabling %w", err)
@@ -205,7 +202,7 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
-		Message: "blobs enabled",
+		Message: gin.H{"message": "blobs enabled"},
 	}, nil
 }
 

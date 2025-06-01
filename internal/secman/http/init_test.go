@@ -22,7 +22,7 @@ func TestInit_Handler(t *testing.T) {
 			prepare: func(core *secman.Core, coreRepository *secman.MockICoreRepository) {
 				core.IsInitialized.Store(true)
 			},
-			wantStatus: http.StatusOK,
+			wantStatus: http.StatusNotModified,
 		},
 		{
 			name: "init root token failed",

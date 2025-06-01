@@ -13,7 +13,7 @@ func (b *Backend) ShowCardholderNameHandler(ctx context.Context, req *secman.Log
 	b.beMtx.RLock()
 	defer b.beMtx.RUnlock()
 
-	cardToken := params.Params["card_token"]
+	cardToken := params.Params["pan_token"]
 	cardholderNameToken := params.Params["cardholder_name_token"]
 
 	cardholderName, ok, err := b.repo.ValueOk(ctx, cardToken+"/cardholder_name/"+cardholderNameToken)

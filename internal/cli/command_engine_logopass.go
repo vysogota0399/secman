@@ -64,15 +64,15 @@ func (c *LogopassCommand) Parse(args []string) error {
 func (c *LogopassCommand) Handle(ctx context.Context, b *strings.Builder, o *Operation) error {
 	switch c.operation {
 	case "login":
-		return c.login(ctx, b, o)
+		return c.handleLogin(ctx, b, o)
 	case "register":
-		return c.register(ctx, b, o)
+		return c.handleRegister(ctx, b, o)
 	}
 
 	return nil
 }
 
-func (c *LogopassCommand) login(ctx context.Context, b *strings.Builder, o *Operation) error {
+func (c *LogopassCommand) handleLogin(ctx context.Context, b *strings.Builder, o *Operation) error {
 	if c.username == "" || c.password == "" {
 		return errors.New("username and password are required")
 	}
@@ -92,7 +92,7 @@ func (c *LogopassCommand) login(ctx context.Context, b *strings.Builder, o *Oper
 		return err
 	}
 
-	response, _, err := o.Client.Post(ctx, "engine/auth/logopass/login", bytes.NewReader(body), headers)
+	resp, err := o.Client.Post(ctx, "engine/auth/logopass/login", bytes.NewReader(body), headers)
 	if err != nil {
 		return err
 	}
@@ -102,17 +102,17 @@ func (c *LogopassCommand) login(ctx context.Context, b *strings.Builder, o *Oper
 	}
 
 	var loginResponse LoginResponse
-	if err := json.NewDecoder(response).Decode(&loginResponse); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&loginResponse); err != nil {
 		return err
 	}
 
-	o.Session.Set(LogopassTokenKey, loginResponse.Token)
+	o.Session.Login(loginResponse.Token, "logopass")
 
 	b.WriteString("Successfull")
 	return nil
 }
 
-func (c *LogopassCommand) register(ctx context.Context, b *strings.Builder, o *Operation) error {
+func (c *LogopassCommand) handleRegister(ctx context.Context, b *strings.Builder, o *Operation) error {
 	if c.username == "" || c.password == "" {
 		return errors.New("username and password are required")
 	}
@@ -132,7 +132,7 @@ func (c *LogopassCommand) register(ctx context.Context, b *strings.Builder, o *O
 		return err
 	}
 
-	_, _, err = o.Client.Post(ctx, "engine/auth/logopass/register", bytes.NewReader(body), headers)
+	_, err = o.Client.Post(ctx, "engine/auth/logopass/register", bytes.NewReader(body), headers)
 	if err != nil {
 		return err
 	}

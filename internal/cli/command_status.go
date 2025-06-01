@@ -27,7 +27,7 @@ func (c *StatusCommand) Info() string {
 func (c *StatusCommand) Handle(ctx context.Context, b *strings.Builder, o *Operation) error {
 	headers := map[string]string{}
 	o.Session.Authenticate(headers)
-	body, _, err := o.Client.Get(ctx, "sys/status", headers)
+	response, err := o.Client.Get(ctx, "sys/status", headers)
 	if err != nil {
 		return err
 	}
@@ -36,16 +36,23 @@ func (c *StatusCommand) Handle(ctx context.Context, b *strings.Builder, o *Opera
 		Barrier     string `json:"barrier"`
 		Initialized bool   `json:"initialized"`
 		Sealed      bool   `json:"sealed"`
+		Version     string `json:"version"`
+		Date        string `json:"build_date"`
 	}
 
 	var status StatusResponse
-	if err := json.NewDecoder(body).Decode(&status); err != nil {
+	if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 		return err
 	}
 
-	b.WriteString("Barrier:     " + status.Barrier + "\n")
-	b.WriteString("Initialized: " + strconv.FormatBool(status.Initialized) + "\n")
-	b.WriteString("Sealed:      " + strconv.FormatBool(status.Sealed) + "\n")
+	dataInfo := make([]string, 0, 5)
+	dataInfo = append(dataInfo, "Version:     "+status.Version)
+	dataInfo = append(dataInfo, "Build date:  "+status.Date)
+	dataInfo = append(dataInfo, "Barrier:     "+status.Barrier)
+	dataInfo = append(dataInfo, "Initialized: "+strconv.FormatBool(status.Initialized))
+	dataInfo = append(dataInfo, "Sealed:      "+strconv.FormatBool(status.Sealed))
+
+	b.WriteString(strings.Join(dataInfo, "\n"))
 
 	return nil
 }

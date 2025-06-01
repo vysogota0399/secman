@@ -27,11 +27,16 @@ import (
 var (
 	BuildVersion string = "N/A"
 	BuildDate    string = "N/A"
-	BuildCommit  string = "N/A"
 )
 
 func main() {
-	fx.New(CreateApp()).Run()
+	fx.New(
+		fx.Supply(
+			fx.Annotate(BuildVersion, fx.ResultTags(`name:"build_version"`)),
+			fx.Annotate(BuildDate, fx.ResultTags(`name:"build_date"`)),
+		),
+		CreateApp(),
+	).Run()
 }
 
 func CreateApp() fx.Option {
@@ -42,7 +47,7 @@ func CreateApp() fx.Option {
 			fx.Annotate(config.NewConfig, fx.As(new(logging.LogLevelFetcher))),
 
 			// core
-			fx.Annotate(secman.NewCore),
+			fx.Annotate(secman.NewCore, fx.ParamTags(`name:"build_version"`, `name:"build_date"`)),
 			fx.Annotate(secman.NewCoreRepository, fx.ParamTags(`name:"unsealed_barrier"`), fx.As(new(secman.ICoreRepository))),
 			fx.Annotate(storages.NewStorage,
 				fx.As(new(secman.IStorage)),
@@ -105,19 +110,8 @@ func info(lg *logging.ZapLogger) {
 	lg.InfoCtx(context.Background(), "Build info",
 		zap.String("version", BuildVersion),
 		zap.String("date", BuildDate),
-		zap.String("commit", BuildCommit),
 		zap.Int("pid", os.Getpid()),
 	)
 }
 
 func runServer(server *http.Server) {}
-
-func AsBackend(f any, ants ...fx.Annotation) any {
-	ants = append(ants, fx.ResultTags(`group:"backends"`))
-	ants = append(ants, fx.As(new(secman.LogicalBackend)))
-
-	return fx.Annotate(
-		f,
-		ants...,
-	)
-}

@@ -48,13 +48,13 @@ func TestBackend_ShowPanHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token": "test_card_token",
+						"pan_token": "test_pan_token",
 					},
 				},
 			},
 			want: &secman.LogicalResponse{
 				Status:  http.StatusOK,
-				Message: gin.H{"pan": "4111111111111111"},
+				Message: gin.H{"value": "4111111111111111"},
 			},
 			wantErr: false,
 			prepare: func(mockStorage *secman.MockILogicalStorage, b *Backend) {
@@ -75,7 +75,7 @@ func TestBackend_ShowPanHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token": "test_card_token",
+						"pan_token": "test_pan_token",
 					},
 				},
 			},
@@ -102,7 +102,7 @@ func TestBackend_ShowPanHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token": "test_card_token",
+						"pan_token": "test_pan_token",
 					},
 				},
 			},

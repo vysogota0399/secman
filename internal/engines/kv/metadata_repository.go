@@ -3,7 +3,6 @@ package kv
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"path"
 
 	"github.com/vysogota0399/secman/internal/secman"
@@ -16,7 +15,7 @@ type MetadataRepository struct {
 }
 
 func NewMetadataRepository(storage secman.BarrierStorage) *MetadataRepository {
-	return &MetadataRepository{storage: storage, postfix: "metadata", prefix: "secrets/pci_dss"}
+	return &MetadataRepository{storage: storage, postfix: "metadata", prefix: "unsealed/secrets/kv"}
 }
 
 func (r *MetadataRepository) Get(ctx context.Context, path string) (map[string]string, error) {
@@ -34,16 +33,21 @@ func (r *MetadataRepository) Get(ctx context.Context, path string) (map[string]s
 }
 
 func (r *MetadataRepository) GetOk(ctx context.Context, key string) (map[string]string, bool, error) {
-	entry, err := r.Get(ctx, key)
+	entry, ok, err := r.storage.GetOk(ctx, r.path(key))
 	if err != nil {
-		if errors.Is(err, secman.ErrEntryNotFound) {
-			return nil, false, nil
-		}
-
 		return nil, false, err
 	}
 
-	return entry, true, nil
+	if !ok {
+		return nil, false, nil
+	}
+
+	var metadata map[string]string
+	if err := json.Unmarshal([]byte(entry.Value), &metadata); err != nil {
+		return nil, false, err
+	}
+
+	return metadata, true, nil
 }
 
 func (r *MetadataRepository) Update(ctx context.Context, key string, value map[string]string) error {

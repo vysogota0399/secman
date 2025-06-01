@@ -11,6 +11,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/gin-gonic/gin"
 	"github.com/vysogota0399/secman/internal/logging"
 	"github.com/vysogota0399/secman/internal/secman"
 	"github.com/vysogota0399/secman/internal/secman/cryptoutils"
@@ -79,38 +80,34 @@ type MetadataBody struct {
 func (b *Backend) Paths() map[string]map[string]*secman.Path {
 	return map[string]map[string]*secman.Path{
 		http.MethodGet: {
-			PATH + "/:card_token/metadata": {
+			PATH + "/:pan_token/metadata": {
 				Handler:     b.ShowMetadataHandler,
 				Description: "Get the metadata of a card",
 				Fields: []secman.Field{
 					{
-						Name:        "card_token",
+						Name:        "pan_token",
 						Description: "The token of the card",
 					},
 				},
 			},
 
-			PATH + "/:card_token": {
+			PATH + "/:pan_token": {
 				Handler:     b.ShowPanHandler,
 				Description: "Get the PAN of a card",
 				Fields: []secman.Field{
 					{
-						Name:        "card_token",
-						Description: "The pan token of the card",
-					},
-					{
 						Name:        "pan_token",
-						Description: "The token of the PAN",
+						Description: "The pan token of the card",
 					},
 				},
 			},
 
-			PATH + "/:card_token/cardholder_name/:cardholder_name_token": {
+			PATH + "/:pan_token/cardholder_name/:cardholder_name_token": {
 				Handler:     b.ShowCardholderNameHandler,
 				Description: "Get the cardholder name of a card",
 				Fields: []secman.Field{
 					{
-						Name:        "card_token",
+						Name:        "pan_token",
 						Description: "The pan token of the card",
 					},
 					{
@@ -120,12 +117,12 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 				},
 			},
 
-			PATH + "/:card_token/expiry_date/:expiry_date_token": {
+			PATH + "/:pan_token/expiry_date/:expiry_date_token": {
 				Handler:     b.ShowExpiryDateHandler,
 				Description: "Get the expiry date of a card",
 				Fields: []secman.Field{
 					{
-						Name:        "card_token",
+						Name:        "pan_token",
 						Description: "The pan token of the card",
 					},
 					{
@@ -135,12 +132,12 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 				},
 			},
 
-			PATH + "/:card_token/security_code/:security_code_token": {
+			PATH + "/:pan_token/security_code/:security_code_token": {
 				Handler:     b.ShowSecurityCodeHandler,
 				Description: "Get the security code of a card",
 				Fields: []secman.Field{
 					{
-						Name:        "card_token",
+						Name:        "pan_token",
 						Description: "The pan token of the card",
 					},
 					{
@@ -158,25 +155,25 @@ func (b *Backend) Paths() map[string]map[string]*secman.Path {
 			},
 		},
 		http.MethodDelete: {
-			PATH + "/:card_token": {
+			PATH + "/:pan_token": {
 				Handler:     b.DeleteHandler,
 				Description: "Delete a card",
 				Fields: []secman.Field{
 					{
-						Name:        "card_token",
+						Name:        "pan_token",
 						Description: "The key to delete",
 					},
 				},
 			},
 		},
 		http.MethodPut: {
-			PATH + "/:card_token/metadata": {
+			PATH + "/:pan_token/metadata": {
 				Handler:     b.UpdateMetadataHandler,
 				Description: "Update a card metadata",
 				Body:        func() any { return &MetadataBody{} },
 				Fields: []secman.Field{
 					{
-						Name:        "card_token",
+						Name:        "pan_token",
 						Description: "The key to update",
 					},
 				},
@@ -192,7 +189,7 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 	if b.exist.Load() {
 		return &secman.LogicalResponse{
 			Status:  http.StatusNotModified,
-			Message: "pci_dss: already enabled",
+			Message: gin.H{"message": "pci_dss: already enabled"},
 		}, nil
 	}
 
@@ -204,7 +201,7 @@ func (b *Backend) Enable(ctx context.Context, req *secman.LogicalRequest) (*secm
 
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
-		Message: "pci_dss enabled",
+		Message: gin.H{"message": "pci_dss enabled"},
 	}, nil
 }
 

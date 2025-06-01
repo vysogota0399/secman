@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"net/http"
 	"path"
 	"strings"
@@ -18,9 +19,16 @@ type EngineCommand struct {
 var _ ICommand = &EngineCommand{}
 
 func NewEngineCommand() *EngineCommand {
-	return &EngineCommand{
+	c := &EngineCommand{
 		FSet: flag.NewFlagSet("engine", flag.ExitOnError),
 	}
+
+	c.FSet.Usage = func() {
+		fmt.Println("Usage: secman engine <operation> <engine_path> [<key>=<value>]")
+		c.FSet.PrintDefaults()
+	}
+
+	return c
 }
 
 func (c *EngineCommand) Info() string {
@@ -77,9 +85,9 @@ func (c *EngineCommand) enableEngine(ctx context.Context, b *strings.Builder, o 
 		return err
 	}
 
-	_, statusCode, err := o.Client.Post(ctx, path.Join("sys", "engines", "enable", enginePath), bytes.NewReader(body), headers)
+	resp, err := o.Client.Post(ctx, path.Join("sys", "engines", "enable", enginePath), bytes.NewReader(body), headers)
 	if err != nil {
-		if statusCode == http.StatusNotFound {
+		if resp.Status == http.StatusNotFound {
 			return errors.New("engine not found")
 		}
 

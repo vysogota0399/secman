@@ -21,6 +21,8 @@ func (h *Status) Handler() func(c *gin.Context) {
 			"sealed":      h.core.IsSealed.Load(),
 			"initialized": h.core.IsInitialized.Load(),
 			"barrier":     h.core.Barrier.Info(),
+			"version":     h.core.BuildVersion,
+			"build_date":        h.core.BuildDate,
 		}
 
 		c.JSON(http.StatusOK, status)

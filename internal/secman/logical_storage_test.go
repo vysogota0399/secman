@@ -131,14 +131,15 @@ func TestLogicalStorage_Get(t *testing.T) {
 				path: "test/path",
 			},
 			want: Entry{
-				Key:   "test/path",
+				Key:   "/test/path",
 				Value: "test-value",
+				Path:  "test/prefix/test/path",
 			},
 			wantErr: false,
 			setup: func() {
 				mockBarrier.EXPECT().
 					Get(ctx, "test/prefix/test/path").
-					Return(Entry{Value: "test-value"}, nil)
+					Return(Entry{Path: "test/prefix/test/path", Value: "test-value"}, nil)
 			},
 		},
 		{
@@ -474,16 +475,16 @@ func TestLogicalStorage_List(t *testing.T) {
 				key: "test/path",
 			},
 			want: []Entry{
-				{Key: "key1", Value: "value1"},
-				{Key: "key2", Value: "value2"},
+				{Path: "test/prefix/test/path", Value: "value1", Key: "/test/path"},
+				{Path: "test/prefix/test/path", Value: "value2", Key: "/test/path"},
 			},
 			wantErr: false,
 			setup: func() {
 				mockBarrier.EXPECT().
 					List(ctx, "test/prefix/test/path").
 					Return([]Entry{
-						{Key: "key1", Value: "value1"},
-						{Key: "key2", Value: "value2"},
+						{Path: "test/prefix/test/path", Value: "value1"},
+						{Path: "test/prefix/test/path", Value: "value2"},
 					}, nil)
 			},
 		},

@@ -27,6 +27,9 @@ type BarrierStorage interface {
 }
 
 type Entry struct {
-	Key   string `json:"key"`
+	// Key is the logical key of the entry
+	Key string `json:"key"`
+	// Path is the physical path of the entry in the storage
+	Path  string `json:"path"`
 	Value string `json:"value"`
 }

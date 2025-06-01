@@ -25,7 +25,13 @@ func (h *Engine) Handler() func(c *gin.Context) {
 			return
 		}
 
-		resp, err := backend.Router().Handle(c)
+		router := backend.Router()
+		if router == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "engine not found for specified path"})
+			return
+		}
+
+		resp, err := router.Handle(c)
 		if err != nil {
 			h.core.Log.ErrorCtx(c.Request.Context(), "error processing handler", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "request failed, see logs for more details"})

@@ -16,7 +16,7 @@ type MetadataRepository struct {
 }
 
 func NewMetadataRepository(storage secman.BarrierStorage) *MetadataRepository {
-	return &MetadataRepository{storage: storage, postfix: "metadata", prefix: "secrets/blobs"}
+	return &MetadataRepository{storage: storage, postfix: "metadata", prefix: "unsealed/secrets/blobs"}
 }
 
 func (r *MetadataRepository) Get(ctx context.Context, path string) (map[string]string, error) {

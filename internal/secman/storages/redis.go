@@ -68,7 +68,7 @@ func (s *RedisStorage) Get(ctx context.Context, path string) (secman.PhysicalEnt
 		return secman.PhysicalEntry{}, fmt.Errorf("storage: failed to get entry with key %s: %w", path, err)
 	}
 
-	return secman.PhysicalEntry{Value: res, Key: path}, nil
+	return secman.PhysicalEntry{Value: res, Path: path}, nil
 }
 
 func (s *RedisStorage) Update(ctx context.Context, path string, entry secman.PhysicalEntry, ttl time.Duration) error {
@@ -85,19 +85,19 @@ func (s *RedisStorage) List(ctx context.Context, path string) ([]secman.Physical
 	var err error
 
 	for {
-		var keys []string
-		keys, cursor, err = s.rdb.Scan(ctx, cursor, path+"*", 10).Result()
+		var paths []string
+		paths, cursor, err = s.rdb.Scan(ctx, cursor, path+"*", 10).Result()
 		if err != nil {
 			return nil, fmt.Errorf("storage: failed to scan keys: %w", err)
 		}
 
-		if len(keys) > 0 {
+		if len(paths) > 0 {
 			// Use pipeline for better performance
 			pipe := s.rdb.Pipeline()
-			cmds := make([]*redis.StringCmd, len(keys))
+			cmds := make([]*redis.StringCmd, len(paths))
 
-			for i, key := range keys {
-				cmds[i] = pipe.Get(ctx, key)
+			for i, path := range paths {
+				cmds[i] = pipe.Get(ctx, path)
 			}
 
 			_, err = pipe.Exec(ctx)
@@ -109,7 +109,7 @@ func (s *RedisStorage) List(ctx context.Context, path string) ([]secman.Physical
 			for i, cmd := range cmds {
 				val, err := cmd.Bytes()
 				if err == nil {
-					entries = append(entries, secman.PhysicalEntry{Value: val, Key: keys[i]})
+					entries = append(entries, secman.PhysicalEntry{Value: val, Path: paths[i]})
 				}
 			}
 		}

@@ -21,4 +21,6 @@ var AllCommands = Commands{
 	"engine":   NewEngineCommand(),
 	"logopass": NewLogopassCommand(),
 	"kv":       NewKvCommand(),
+	"blob":     NewBlobCommand(),
+	"pci_dss":  NewCommandPCI_DSS(),
 }

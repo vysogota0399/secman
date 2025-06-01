@@ -55,7 +55,7 @@ func TestBackend_ShowMetadataHandler(t *testing.T) {
 			want: &secman.LogicalResponse{
 				Status: 200,
 				Message: gin.H{
-					"metadata": map[string]string{
+					"value": map[string]string{
 						"owner": "test-owner",
 						"type":  "test-type",
 					},
@@ -64,11 +64,11 @@ func TestBackend_ShowMetadataHandler(t *testing.T) {
 			wantErr: false,
 			prepare: func(mockStorage *secman.MockILogicalStorage, b *Backend) {
 				mockStorage.EXPECT().
-					Get(gomock.Any(), gomock.Any()).
+					GetOk(gomock.Any(), gomock.Any()).
 					Return(secman.Entry{
-						Key:   "test-key",
+						Path:  "secrets/kv/test-key",
 						Value: `{"owner":"test-owner","type":"test-type"}`,
-					}, nil)
+					}, true, nil)
 			},
 		},
 		{
@@ -97,8 +97,8 @@ func TestBackend_ShowMetadataHandler(t *testing.T) {
 			wantErr: false,
 			prepare: func(mockStorage *secman.MockILogicalStorage, b *Backend) {
 				mockStorage.EXPECT().
-					Get(gomock.Any(), gomock.Any()).
-					Return(secman.Entry{}, secman.ErrEntryNotFound)
+					GetOk(gomock.Any(), gomock.Any()).
+					Return(secman.Entry{}, false, nil)
 			},
 		},
 		{
@@ -121,8 +121,8 @@ func TestBackend_ShowMetadataHandler(t *testing.T) {
 			wantErr: true,
 			prepare: func(mockStorage *secman.MockILogicalStorage, b *Backend) {
 				mockStorage.EXPECT().
-					Get(gomock.Any(), gomock.Any()).
-					Return(secman.Entry{}, assert.AnError)
+					GetOk(gomock.Any(), gomock.Any()).
+					Return(secman.Entry{}, false, assert.AnError)
 			},
 		},
 	}

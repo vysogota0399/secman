@@ -3,7 +3,6 @@ package secman
 import (
 	"context"
 	"errors"
-	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -51,7 +50,6 @@ func TestNewCore(t *testing.T) {
 func TestCore_Init(t *testing.T) {
 	type fields struct {
 		IsInitialized *atomic.Bool
-		initMtx       sync.RWMutex
 		Config        *config.Config
 	}
 	type args struct {
@@ -68,7 +66,6 @@ func TestCore_Init(t *testing.T) {
 			name: "successful initialization",
 			fields: fields{
 				IsInitialized: &atomic.Bool{},
-				initMtx:       sync.RWMutex{},
 				Config:        &config.Config{},
 			},
 			args: &args{
@@ -85,7 +82,6 @@ func TestCore_Init(t *testing.T) {
 			name: "already initialized",
 			fields: fields{
 				IsInitialized: &atomic.Bool{},
-				initMtx:       sync.RWMutex{},
 				Config:        &config.Config{},
 			},
 			args: &args{
@@ -100,7 +96,6 @@ func TestCore_Init(t *testing.T) {
 			name: "set initialized fails",
 			fields: fields{
 				IsInitialized: &atomic.Bool{},
-				initMtx:       sync.RWMutex{},
 				Config:        &config.Config{},
 			},
 			args: &args{

@@ -103,10 +103,10 @@ func TestNewTokensRepository(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := NewTokensRepository(tt.args.barrier)
 			if got == nil {
-				t.Errorf("NewTokensRepository() = nil, want non-nil")
+				t.Fatal("NewTokensRepository() = nil, want non-nil")
 			}
 			if got.storage == nil {
-				t.Errorf("NewTokensRepository().storage = nil, want non-nil")
+				t.Fatal("NewTokensRepository().storage = nil, want non-nil")
 			}
 		})
 	}

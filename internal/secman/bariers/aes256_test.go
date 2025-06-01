@@ -798,7 +798,7 @@ func TestAes256Barier_GetOk(t *testing.T) {
 			},
 			want: secman.Entry{
 				Value: "decrypted value",
-				Key:   "test/path",
+				Path:  "test/path",
 			},
 			want1:   true,
 			wantErr: false,
@@ -817,6 +817,7 @@ func TestAes256Barier_GetOk(t *testing.T) {
 					Get(gomock.Any(), "test/path").
 					Return(secman.PhysicalEntry{
 						Value: encrypted,
+						Path:  "test/path",
 					}, nil)
 			},
 		},

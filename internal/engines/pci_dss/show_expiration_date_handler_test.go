@@ -48,14 +48,14 @@ func TestBackend_ShowExpiryDateHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token":        "test_card_token",
+						"pan_token":        "test_pan_token",
 						"expiry_date_token": "test_date_token",
 					},
 				},
 			},
 			want: &secman.LogicalResponse{
 				Status:  http.StatusOK,
-				Message: gin.H{"expiry_date": "12/25"},
+				Message: gin.H{"value": "12/25"},
 			},
 			wantErr: false,
 			prepare: func(mockStorage *secman.MockILogicalStorage, b *Backend) {
@@ -76,7 +76,7 @@ func TestBackend_ShowExpiryDateHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token":        "test_card_token",
+						"pan_token":        "test_pan_token",
 						"expiry_date_token": "test_date_token",
 					},
 				},
@@ -104,7 +104,7 @@ func TestBackend_ShowExpiryDateHandler(t *testing.T) {
 				req: &secman.LogicalRequest{},
 				params: &secman.LogicalParams{
 					Params: map[string]string{
-						"card_token":        "test_card_token",
+						"pan_token":        "test_pan_token",
 						"expiry_date_token": "test_date_token",
 					},
 				},

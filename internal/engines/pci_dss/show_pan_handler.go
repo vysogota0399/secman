@@ -13,7 +13,7 @@ func (b *Backend) ShowPanHandler(ctx context.Context, req *secman.LogicalRequest
 	b.beMtx.RLock()
 	defer b.beMtx.RUnlock()
 
-	cardToken := params.Params["card_token"]
+	cardToken := params.Params["pan_token"]
 
 	pan, ok, err := b.repo.ValueOk(ctx, cardToken)
 	if err != nil {

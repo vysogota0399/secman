@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -11,11 +12,18 @@ import (
 	"go.uber.org/zap"
 )
 
+type AuthProvider interface {
+	Authenticate(h map[string]string, session ISession) error
+	Login(session ISession, token string)
+	GetToken(session ISession) (string, bool)
+}
+
 type Session struct {
-	Token       string
-	Secrets     map[string]string
-	lg          *logging.ZapLogger
-	storagePath string
+	Secrets      map[string]string
+	lg           *logging.ZapLogger
+	storagePath  string
+	AuthProvider string
+	providers    map[string]AuthProvider
 }
 
 var _ ISession = (*Session)(nil)
@@ -27,10 +35,18 @@ func NewSession(cfg *Config, lg *logging.ZapLogger) (*Session, error) {
 	}
 
 	s := &Session{
-		Token:       cfg.RootToken,
 		Secrets:     make(map[string]string),
 		lg:          lg,
 		storagePath: path.Join(hd, ".secman"),
+		providers: map[string]AuthProvider{
+			"root_token": NewRootTokenAuthProvider(),
+			"logopass":   NewLogopassAuthProvider(),
+		},
+	}
+
+	if cfg.RootToken != "" {
+		s.AuthProvider = "root_token"
+		s.providers["root_token"].Login(s, cfg.RootToken)
 	}
 
 	return s, nil
@@ -81,14 +97,6 @@ func (s *Session) Persist() error {
 	return nil
 }
 
-func (s *Session) GetToken() string {
-	return s.Token
-}
-
-func (s *Session) SetRootToken(token string) {
-	s.Token = token
-}
-
 func (s *Session) GetSecrets() map[string]string {
 	return s.Secrets
 }
@@ -97,26 +105,33 @@ func (s *Session) Set(key, value string) {
 	s.Secrets[key] = value
 }
 
-func (s *Session) Get(key string) string {
-	return s.Secrets[key]
+func (s *Session) Get(key string) (string, bool) {
+	value, ok := s.Secrets[key]
+	return value, ok
 }
 
-const LogopassTokenKey = "engine/auth/logopass/login/token"
-
 func (s *Session) Authenticate(h map[string]string) error {
-	if token, ok := s.Secrets[LogopassTokenKey]; ok {
-		h["Authorization"] = "Bearer " + token
-		return nil
+	provider, ok := s.providers[s.AuthProvider]
+	if !ok {
+		return errors.New("can't authenticate request, no auth provider selected")
 	}
 
-	if s.Token != "" {
-		h["X-Secman-Token"] = s.Token
-		return nil
+	if err := provider.Authenticate(h, s); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (s *Session) TruncateSecrets() {
+func (s *Session) Login(token string, provider string) {
+	s.AuthProvider = provider
+	s.providers[provider].Login(s, token)
+}
+
+func (s *Session) Clear() {
 	s.Secrets = make(map[string]string)
+}
+
+func (s *Session) GetAuthProvider(ap string) AuthProvider {
+	return s.providers[ap]
 }

@@ -31,7 +31,7 @@ func TestEngine_Handler(t *testing.T) {
 				be := secman.NewMockLogicalBackend(gomock.NewController(t))
 				be.EXPECT().Paths().Return(map[string]map[string]*secman.Path{})
 
-				backendRouter, err := secman.NewBackendRouter(be)
+				backendRouter, err := secman.NewBackendRouter(be, secman.NewLogger(t))
 				if err != nil {
 					t.Fatalf("Failed to create backend router: %v", err)
 				}

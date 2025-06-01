@@ -19,10 +19,9 @@ func TestBackend_CreateHandler(t *testing.T) {
 	lg := secman.NewLogger(t)
 
 	type fields struct {
-		exist    *atomic.Bool
-		router   *secman.BackendRouter
-		metadata *MetadataRepository
-		lg       *logging.ZapLogger
+		exist  *atomic.Bool
+		router *secman.BackendRouter
+		lg     *logging.ZapLogger
 	}
 	type args struct {
 		ctx    context.Context
@@ -40,10 +39,9 @@ func TestBackend_CreateHandler(t *testing.T) {
 		{
 			name: "successful creation",
 			fields: &fields{
-				exist:    &atomic.Bool{},
-				router:   nil,
-				metadata: &MetadataRepository{},
-				lg:       lg,
+				exist:  &atomic.Bool{},
+				router: nil,
+				lg:     lg,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -64,15 +62,22 @@ func TestBackend_CreateHandler(t *testing.T) {
 				mockStorage.EXPECT().
 					Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil)
+
+				mockStorage.EXPECT().
+					GetOk(gomock.Any(), gomock.Any()).
+					Return(secman.Entry{}, false, nil)
+
+				mockStorage.EXPECT().
+					Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil)
 			},
 		},
 		{
 			name: "invalid body type",
 			fields: &fields{
-				exist:    &atomic.Bool{},
-				router:   nil,
-				metadata: &MetadataRepository{},
-				lg:       lg,
+				exist:  &atomic.Bool{},
+				router: nil,
+				lg:     lg,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -90,10 +95,9 @@ func TestBackend_CreateHandler(t *testing.T) {
 		{
 			name: "storage error",
 			fields: &fields{
-				exist:    &atomic.Bool{},
-				router:   nil,
-				metadata: &MetadataRepository{},
-				lg:       lg,
+				exist:  &atomic.Bool{},
+				router: nil,
+				lg:     lg,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -109,8 +113,8 @@ func TestBackend_CreateHandler(t *testing.T) {
 			wantErr: true,
 			prepare: func(mockStorage *secman.MockILogicalStorage, b *Backend) {
 				mockStorage.EXPECT().
-					Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(assert.AnError)
+					GetOk(gomock.Any(), gomock.Any()).
+					Return(secman.Entry{}, false, assert.AnError)
 			},
 		},
 	}
@@ -122,7 +126,7 @@ func TestBackend_CreateHandler(t *testing.T) {
 				exist:    tt.fields.exist,
 				router:   tt.fields.router,
 				repo:     NewRepository(mockStorage, lg),
-				metadata: tt.fields.metadata,
+				metadata: NewMetadataRepository(mockStorage),
 				lg:       tt.fields.lg,
 			}
 			tt.prepare(mockStorage, b)

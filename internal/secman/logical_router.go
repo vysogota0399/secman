@@ -97,10 +97,6 @@ func (r *LogicalRouter) PostUnsealEngines(ctx context.Context) error {
 			return fmt.Errorf("router: type cast backend to engine failed %T", engine)
 		}
 
-		if err := r.initBackendRouter(be); err != nil {
-			return fmt.Errorf("router: init backend router failed error: %w", err)
-		}
-
 		if err := be.PostUnseal(ctx); err != nil {
 			if errors.Is(err, ErrEngineIsNotEnabled) {
 				r.lg.DebugCtx(ctx, "router: engine is not enabled, skip", zap.String("engine", be.RootPath()))
@@ -108,6 +104,10 @@ func (r *LogicalRouter) PostUnsealEngines(ctx context.Context) error {
 			}
 
 			return fmt.Errorf("router: post unseal engine %s error: %w", be.RootPath(), err)
+		}
+
+		if err := r.initBackendRouter(be); err != nil {
+			return fmt.Errorf("router: init backend router failed error: %w", err)
 		}
 	}
 
@@ -129,7 +129,7 @@ func (r *LogicalRouter) EnableEngine(ctx context.Context, engine LogicalBackend,
 }
 
 func (r *LogicalRouter) initBackendRouter(engine LogicalBackend) error {
-	router, err := NewBackendRouter(engine)
+	router, err := NewBackendRouter(engine, r.lg)
 	if err != nil {
 		return fmt.Errorf("router: init backend router failed error: %w", err)
 	}
