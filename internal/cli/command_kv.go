@@ -129,13 +129,21 @@ func (c *KvCommand) read(ctx context.Context, b *strings.Builder, o *Operation) 
 		return err
 	}
 
-	resp := map[string]string{}
+	resp := map[string]any{}
 	if err := json.NewDecoder(response).Decode(&resp); err != nil {
 		return err
 	}
 
-	b.WriteString("Key:   " + c.key + "\n")
-	b.WriteString("Value: " + resp["value"] + "\n")
+	for k, v := range resp {
+		if vmap, ok := v.(map[string]any); ok {
+			for k, v := range vmap {
+				b.WriteString(k + ": " + fmt.Sprintf("%v", v))
+			}
+		} else {
+			b.WriteString(k + ": " + fmt.Sprintf("%v", v))
+		}
+	}
+
 	return nil
 }
 

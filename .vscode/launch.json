@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Login",
+      "name": "Get kv",
       "type": "go",
       "request": "launch",
       "mode": "auto",
@@ -17,12 +17,10 @@
         "SSL_SKIP_VERIFY": "true"
       },
       "args": [
-        "logopass",
-        "register",
-        "-u",
-        "admin",
-        "-p",
-        "admin"
+        "kv",
+        "read",
+        "-k",
+        "pg/password/metadata"
       ],
       "showLog": true
     },
@@ -52,7 +50,7 @@
       "type": "go",
       "request": "attach",
       "mode": "local",
-      "processId": 22648
+      "processId": 27964
     }
 
   ]

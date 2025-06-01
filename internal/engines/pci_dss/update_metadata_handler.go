@@ -44,6 +44,6 @@ func (b *Backend) UpdateMetadataHandler(ctx context.Context, req *secman.Logical
 
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
-		Message: gin.H{"metadata": newMetadata},
+		Message: gin.H{"value": newMetadata},
 	}, nil
 }

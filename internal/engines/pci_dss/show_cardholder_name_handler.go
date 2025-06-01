@@ -30,6 +30,6 @@ func (b *Backend) ShowCardholderNameHandler(ctx context.Context, req *secman.Log
 
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
-		Message: gin.H{"cardholder_name": cardholderName},
+		Message: gin.H{"value": cardholderName},
 	}, nil
 }

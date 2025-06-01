@@ -29,6 +29,6 @@ func (b *Backend) ShowMetadataHandler(ctx context.Context, req *secman.LogicalRe
 
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
-		Message: gin.H{"metadata": metadata},
+		Message: gin.H{"value": metadata},
 	}, nil
 }

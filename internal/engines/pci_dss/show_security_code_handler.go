@@ -30,6 +30,6 @@ func (b *Backend) ShowSecurityCodeHandler(ctx context.Context, req *secman.Logic
 
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
-		Message: gin.H{"security_code": securityCode},
+		Message: gin.H{"value": securityCode},
 	}, nil
 }

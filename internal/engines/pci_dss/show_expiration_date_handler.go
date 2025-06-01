@@ -30,6 +30,6 @@ func (b *Backend) ShowExpiryDateHandler(ctx context.Context, req *secman.Logical
 
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
-		Message: gin.H{"expiry_date": expiryDate},
+		Message: gin.H{"value": expiryDate},
 	}, nil
 }

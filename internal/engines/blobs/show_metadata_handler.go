@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/vysogota0399/secman/internal/secman"
 )
 
@@ -17,6 +18,6 @@ func (b *Backend) showMetadataHandler(ctx context.Context, req *secman.LogicalRe
 
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
-		Message: metadata,
+		Message: gin.H{"value": metadata},
 	}, nil
 }

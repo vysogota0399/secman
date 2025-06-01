@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -79,6 +80,11 @@ func NewBackendRouter(be LogicalBackend) (*BackendRouter, error) {
 
 			router[method] = append(router[method], &BackendRouterNode{pattern: re, Metadata: pathInfo, Fields: make(map[string]string)})
 		}
+
+		// sort nodes by length of pattern, longest first to match the most specific pattern first
+		sort.Slice(router[method], func(i, j int) bool {
+			return len(router[method][i].pattern.String()) > len(router[method][j].pattern.String())
+		})
 	}
 
 	return &BackendRouter{router: router}, nil

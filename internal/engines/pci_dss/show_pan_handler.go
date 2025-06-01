@@ -29,6 +29,6 @@ func (b *Backend) ShowPanHandler(ctx context.Context, req *secman.LogicalRequest
 
 	return &secman.LogicalResponse{
 		Status:  http.StatusOK,
-		Message: gin.H{"pan": pan},
+		Message: gin.H{"value": pan},
 	}, nil
 }
