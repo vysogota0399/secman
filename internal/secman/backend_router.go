@@ -64,7 +64,7 @@ func NewBackendRouter(be LogicalBackend) (*BackendRouter, error) {
 
 			for i, part := range patternParts {
 				if strings.HasPrefix(part, ":") {
-					regexpParts[i] = "([^/]+)"
+					regexpParts[i] = "(.+)"
 				} else {
 					// Escape special regexp characters
 					regexpParts[i] = regexp.QuoteMeta(part)

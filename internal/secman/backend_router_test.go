@@ -29,6 +29,20 @@ func TestBackendRouter(t *testing.T) {
 					}, nil
 				},
 			},
+			"/test/:id/metadata": {
+				Handler: func(ctx context.Context, req *LogicalRequest, params *LogicalParams) (*LogicalResponse, error) {
+					return &LogicalResponse{
+						Status:  http.StatusOK,
+						Message: "test",
+					}, nil
+				},
+				Fields: []Field{
+					{
+						Name:        "id",
+						Description: "The ID of the test",
+					},
+				},
+			},
 		},
 		"POST": {
 			"/test": {
@@ -100,14 +114,14 @@ func TestBackendRouter(t *testing.T) {
 			wantStatus: http.StatusOK,
 		},
 		{
-			Name: "PUT '/api/v1/test/123/params'",
+			Name: "GET '/api/v1/test/pg/password/metadata'",
 			request: &gin.Context{
 				Request: &http.Request{
-					Method: http.MethodPut,
-					URL:    &url.URL{Path: "/api/v1/test/123/params"},
+					Method: http.MethodGet,
+					URL:    &url.URL{Path: "/api/v1/test/pg/password/metadata"},
 				},
 			},
-			wantStatus: http.StatusNotFound,
+			wantStatus: http.StatusOK,
 		},
 	}
 
