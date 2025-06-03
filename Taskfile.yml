@@ -1,0 +1,58 @@
+version: '3'
+
+env:
+  LOG_LEVEL: 0
+
+tasks:
+  enable-*:
+    vars:
+      ENGINE: '{{index .MATCH 0}}'
+    cmds:
+      - 'curl -kv -X POST -H "X-Secman-Token: $ROOT_TOKEN" https://127.0.0.1:8443/api/sys/engines/enable/{{.ENGINE}} -d "{}" | jq'
+  run:
+    cmds:
+      - go build -o secman_server cmd/server/main.go
+      - ./secman_server
+
+  genmock-*:
+    desc: exec "task genmock-OrdersRepository -- internal/server/entities"
+          then rename internal/server/entities/mocks/CreateOrderService to snake case
+    vars:
+      STRUCT: '{{index .MATCH 0}}'
+    cmds:
+      - mockgen -package=mocks -destination={{.CLI_ARGS}}/{{.STRUCT}}.go github.com/vysogota0399/secman/{{.CLI_ARGS}} {{.STRUCT}}
+
+  test_coverage:
+    cmds:
+      - go clean -testcache
+      - go test -count 1 ./internal/... -coverprofile=coverage.out
+      - go tool cover -func=coverage.out
+      - rm coverage.out
+  gen-pair:
+    dir: certs
+    cmds:
+      - openssl req -x509 -newkey rsa:4096 -keyout private.key -out cert.pem -days 365 -nodes
+
+  build-cli:
+    cmds:
+      - go build -o secman cmd/cli/main.go
+      - mv secman $GOPATH/bin
+
+  build-server:
+    cmds:
+      - go build -o secman_server -ldflags="-X main.BuildVersion=v1.0.0 -X 'main.BuildDate=$(date +'%Y/%m/%d %H:%M:%S')'" cmd/server/main.go
+      - mv secman_server $GOPATH/bin
+
+  init:
+    deps: [gen-pair]
+    cmds:
+      - mv config.yml.example config.yml
+      - docker compose up -d
+
+  check-env:
+    cmds:
+      - docker ps | grep redis || echo "redis not found"
+      - docker ps | grep minio || echo "minio not found"
+      - ls certs/cert.pem || echo "cert.pem not found"
+      - ls certs/private.key || echo "private.key not found"
+      - ls config.yml || echo "config.yml not found"
