@@ -10,7 +10,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/vysogota0399/secman/internal/secman"
 )
 
 func TestNewKvCommand(t *testing.T) {
@@ -117,7 +116,7 @@ func TestKvCommand_Parse(t *testing.T) {
 }
 
 func TestKvCommand_Handle_Write(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {
@@ -194,7 +193,7 @@ func TestKvCommand_Handle_Write(t *testing.T) {
 }
 
 func TestKvCommand_Handle_Read(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {
@@ -319,7 +318,7 @@ func TestKvCommand_Handle_Read(t *testing.T) {
 }
 
 func TestKvCommand_Handle_Update(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {
@@ -396,7 +395,7 @@ func TestKvCommand_Handle_Update(t *testing.T) {
 }
 
 func TestKvCommand_Handle_Delete(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {
@@ -473,7 +472,7 @@ func TestKvCommand_Handle_Delete(t *testing.T) {
 }
 
 func TestKvCommand_Handle_Invalid(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {

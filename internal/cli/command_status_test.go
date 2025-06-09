@@ -9,7 +9,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/vysogota0399/secman/internal/secman"
 )
 
 func TestNewStatusCommand(t *testing.T) {
@@ -35,7 +34,7 @@ func TestNewStatusCommand(t *testing.T) {
 }
 
 func TestStatusCommand_Handle(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockSession := NewMockISession(ctrl)
 	mockClient := NewMockIClient(ctrl)

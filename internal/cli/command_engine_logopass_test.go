@@ -10,7 +10,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/vysogota0399/secman/internal/secman"
 )
 
 func TestNewLogopassCommand(t *testing.T) {
@@ -98,7 +97,7 @@ func TestLogopassCommand_Parse(t *testing.T) {
 }
 
 func TestLogopassCommand_Handle_Login(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {
@@ -219,7 +218,7 @@ func TestLogopassCommand_Handle_Login(t *testing.T) {
 }
 
 func TestLogopassCommand_Handle_Register(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {

@@ -11,7 +11,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/vysogota0399/secman/internal/secman"
 )
 
 func TestNewBlobCommand(t *testing.T) {
@@ -131,7 +130,7 @@ func TestBlobCommand_Parse(t *testing.T) {
 }
 
 func TestBlobCommand_Handle_Write(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	// Create a temporary test file
@@ -222,7 +221,7 @@ func TestBlobCommand_Handle_Write(t *testing.T) {
 }
 
 func TestBlobCommand_Handle_Read(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {
@@ -326,7 +325,7 @@ func TestBlobCommand_Handle_Read(t *testing.T) {
 }
 
 func TestBlobCommand_Handle_Update(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {
@@ -403,7 +402,7 @@ func TestBlobCommand_Handle_Update(t *testing.T) {
 }
 
 func TestBlobCommand_Handle_Delete(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {

@@ -3,8 +3,6 @@ package cli
 import (
 	"reflect"
 	"testing"
-
-	"github.com/vysogota0399/secman/internal/secman"
 )
 
 func TestNewLogopassAuthProvider(t *testing.T) {
@@ -29,7 +27,7 @@ func TestNewLogopassAuthProvider(t *testing.T) {
 }
 
 func TestLogopassAuthProvider_Authenticate(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockSession := NewMockISession(ctrl)
 
@@ -115,7 +113,7 @@ func TestLogopassAuthProvider_Authenticate(t *testing.T) {
 }
 
 func TestLogopassAuthProvider_Login(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockSession := NewMockISession(ctrl)
 
@@ -161,7 +159,7 @@ func TestLogopassAuthProvider_Login(t *testing.T) {
 }
 
 func TestLogopassAuthProvider_GetToken(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockSession := NewMockISession(ctrl)
 
@@ -253,7 +251,7 @@ func TestNewRootTokenAuthProvider(t *testing.T) {
 }
 
 func TestRootTokenAuthProvider_Authenticate(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockSession := NewMockISession(ctrl)
 
@@ -339,7 +337,7 @@ func TestRootTokenAuthProvider_Authenticate(t *testing.T) {
 }
 
 func TestRootTokenAuthProvider_Login(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockSession := NewMockISession(ctrl)
 
@@ -385,7 +383,7 @@ func TestRootTokenAuthProvider_Login(t *testing.T) {
 }
 
 func TestRootTokenAuthProvider_GetToken(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockSession := NewMockISession(ctrl)
 

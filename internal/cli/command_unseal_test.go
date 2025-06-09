@@ -11,7 +11,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/vysogota0399/secman/internal/secman"
 )
 
 func TestNewUnsealCommand(t *testing.T) {
@@ -71,7 +70,7 @@ func TestUnsealCommand_Parse(t *testing.T) {
 }
 
 func TestUnsealCommand_Handle(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockSession := NewMockISession(ctrl)
 	mockClient := NewMockIClient(ctrl)

@@ -9,7 +9,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/vysogota0399/secman/internal/secman"
 )
 
 func TestNewAuthCommand(t *testing.T) {
@@ -69,7 +68,7 @@ func TestAuthCommand_Parse(t *testing.T) {
 }
 
 func TestAuthCommand_Handle(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {

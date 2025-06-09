@@ -15,7 +15,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/vysogota0399/secman/internal/logging"
-	"github.com/vysogota0399/secman/internal/secman"
 )
 
 func TestNewClient(t *testing.T) {
@@ -33,12 +32,12 @@ func TestNewClient(t *testing.T) {
 		{
 			name: "successful client creation",
 			args: args{
-				s:  NewMockISession(secman.NewController(t)),
+				s:  NewMockISession(NewController(t)),
 				c:  &Config{ServerURL: "http://localhost:8080"},
 				lg: &logging.ZapLogger{},
 			},
 			want: &Client{
-				session: NewMockISession(secman.NewController(t)),
+				session: NewMockISession(NewController(t)),
 				config:  &Config{ServerURL: "http://localhost:8080"},
 				lg:      &logging.ZapLogger{},
 			},
@@ -47,7 +46,7 @@ func TestNewClient(t *testing.T) {
 		{
 			name: "error when server URL is empty",
 			args: args{
-				s:  NewMockISession(secman.NewController(t)),
+				s:  NewMockISession(NewController(t)),
 				c:  &Config{ServerURL: ""},
 				lg: &logging.ZapLogger{},
 			},
@@ -82,11 +81,11 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestClient_Post(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockSession := NewMockISession(ctrl)
 	mockHTTP := NewMockHTTP(ctrl)
-	mockLogger := secman.NewLogger(t)
+	mockLogger := NewLogger(t)
 
 	type fields struct {
 		session ISession
@@ -214,11 +213,11 @@ func TestClient_Post(t *testing.T) {
 }
 
 func TestClient_Get(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockSession := NewMockISession(ctrl)
 	mockHTTP := NewMockHTTP(ctrl)
-	mockLogger := secman.NewLogger(t)
+	mockLogger := NewLogger(t)
 
 	type fields struct {
 		session ISession
@@ -355,11 +354,11 @@ func TestClient_Get(t *testing.T) {
 }
 
 func TestClient_Put(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockSession := NewMockISession(ctrl)
 	mockHTTP := NewMockHTTP(ctrl)
-	mockLogger := secman.NewLogger(t)
+	mockLogger := NewLogger(t)
 
 	type fields struct {
 		session ISession
@@ -499,11 +498,11 @@ func TestClient_Put(t *testing.T) {
 }
 
 func TestClient_Delete(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockSession := NewMockISession(ctrl)
 	mockHTTP := NewMockHTTP(ctrl)
-	mockLogger := secman.NewLogger(t)
+	mockLogger := NewLogger(t)
 
 	type fields struct {
 		session ISession
@@ -640,11 +639,11 @@ func TestClient_Delete(t *testing.T) {
 }
 
 func TestClient_MultipartRequest(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockSession := NewMockISession(ctrl)
 	mockHTTP := NewMockHTTP(ctrl)
-	mockLogger := secman.NewLogger(t)
+	mockLogger := NewLogger(t)
 
 	type fields struct {
 		session ISession
@@ -849,11 +848,11 @@ func TestClient_MultipartRequest(t *testing.T) {
 }
 
 func TestNewClientCacheWrapper(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockClient := NewMockIClient(ctrl)
 	mockSession := NewMockISession(ctrl)
-	mockLogger := secman.NewLogger(t)
+	mockLogger := NewLogger(t)
 
 	type args struct {
 		client  IClient
@@ -889,11 +888,11 @@ func TestNewClientCacheWrapper(t *testing.T) {
 }
 
 func TestClientCacheWrapper_Post(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockClient := NewMockIClient(ctrl)
 	mockSession := NewMockISession(ctrl)
-	mockLogger := secman.NewLogger(t)
+	mockLogger := NewLogger(t)
 
 	type fields struct {
 		client  IClient
@@ -983,11 +982,11 @@ func TestClientCacheWrapper_Post(t *testing.T) {
 }
 
 func TestClientCacheWrapper_Get(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockClient := NewMockIClient(ctrl)
 	mockSession := NewMockISession(ctrl)
-	mockLogger := secman.NewLogger(t)
+	mockLogger := NewLogger(t)
 
 	type fields struct {
 		client  IClient
@@ -1144,11 +1143,11 @@ func TestClientCacheWrapper_Get(t *testing.T) {
 }
 
 func TestClientCacheWrapper_Put(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockClient := NewMockIClient(ctrl)
 	mockSession := NewMockISession(ctrl)
-	mockLogger := secman.NewLogger(t)
+	mockLogger := NewLogger(t)
 
 	type fields struct {
 		client  IClient
@@ -1238,11 +1237,11 @@ func TestClientCacheWrapper_Put(t *testing.T) {
 }
 
 func TestClientCacheWrapper_Delete(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockClient := NewMockIClient(ctrl)
 	mockSession := NewMockISession(ctrl)
-	mockLogger := secman.NewLogger(t)
+	mockLogger := NewLogger(t)
 
 	type fields struct {
 		client  IClient
@@ -1330,11 +1329,11 @@ func TestClientCacheWrapper_Delete(t *testing.T) {
 }
 
 func TestClientCacheWrapper_MultipartRequest(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 
 	mockClient := NewMockIClient(ctrl)
 	mockSession := NewMockISession(ctrl)
-	mockLogger := secman.NewLogger(t)
+	mockLogger := NewLogger(t)
 
 	type fields struct {
 		client  IClient

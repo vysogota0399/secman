@@ -6,14 +6,13 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/vysogota0399/secman/internal/logging"
-	"github.com/vysogota0399/secman/internal/secman"
 )
 
 func TestRun(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockSession := NewMockISession(ctrl)
 	mockClient := NewMockIClient(ctrl)
-	mockLogger := secman.NewLogger(t)
+	mockLogger := NewLogger(t)
 	MockCommands := map[string]ICommand{
 		"mock": NewMockICommand(ctrl),
 	}

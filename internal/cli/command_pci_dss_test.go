@@ -10,7 +10,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/vysogota0399/secman/internal/secman"
 )
 
 func TestNewCommandPCI_DSS(t *testing.T) {
@@ -132,7 +131,7 @@ func TestCommandPCI_DSS_Parse(t *testing.T) {
 }
 
 func TestCommandPCI_DSS_Handle_Write(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {
@@ -210,7 +209,7 @@ func TestCommandPCI_DSS_Handle_Write(t *testing.T) {
 }
 
 func TestCommandPCI_DSS_Handle_Read(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {
@@ -496,7 +495,7 @@ func TestCommandPCI_DSS_Handle_Read(t *testing.T) {
 }
 
 func TestCommandPCI_DSS_Handle_Update(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {
@@ -574,7 +573,7 @@ func TestCommandPCI_DSS_Handle_Update(t *testing.T) {
 }
 
 func TestCommandPCI_DSS_Handle_Delete(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {
@@ -652,7 +651,7 @@ func TestCommandPCI_DSS_Handle_Delete(t *testing.T) {
 }
 
 func TestCommandPCI_DSS_Handle_Invalid(t *testing.T) {
-	ctrl := secman.NewController(t)
+	ctrl := NewController(t)
 	mockClient := NewMockIClient(ctrl)
 
 	type args struct {
