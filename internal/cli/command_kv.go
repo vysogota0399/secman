@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -60,6 +61,10 @@ func (c *KvCommand) Parse(args []string) error {
 	case "delete":
 		c.operation = "delete"
 		return c.FSet.Parse(args[2:])
+
+	case "list":
+		c.operation = "list"
+		return c.FSet.Parse(args[2:])
 	}
 
 	c.FSet.Usage()
@@ -76,6 +81,8 @@ func (c *KvCommand) Handle(ctx context.Context, b *strings.Builder, o *Operation
 		return c.delete(ctx, b, o)
 	case "update":
 		return c.update(ctx, b, o)
+	case "list":
+		return c.list(ctx, b, o)
 	}
 	return nil
 }
@@ -208,5 +215,34 @@ func (c *KvCommand) update(ctx context.Context, b *strings.Builder, o *Operation
 	}
 
 	b.WriteString("Successfull")
+	return nil
+}
+
+func (c *KvCommand) list(ctx context.Context, b *strings.Builder, o *Operation) error {
+	headers := map[string]string{}
+	if err := o.Session.Authenticate(headers); err != nil {
+		return err
+	}
+
+	response, err := o.Client.Get(ctx, "engine/secrets/kv", headers)
+	if err != nil {
+		return err
+	}
+
+	type secret struct {
+		Key string `json:"key"`
+	}
+
+	resp := map[string][]secret{}
+	if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
+		return err
+	}
+
+	b.WriteString("Successfull\n")
+	b.WriteString("KEYS COUNT: " + strconv.Itoa(len(resp["value"])) + "\n")
+	for _, v := range resp["value"] {
+		b.WriteString(fmt.Sprintf("KEY: %s\n", v.Key))
+	}
+
 	return nil
 }

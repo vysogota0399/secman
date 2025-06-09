@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -64,6 +65,9 @@ func (c *BlobCommand) Parse(args []string) error {
 	case "update":
 		c.operation = "update"
 		return c.FSet.Parse(args[2:])
+	case "list":
+		c.operation = "list"
+		return c.FSet.Parse(args[2:])
 	}
 
 	c.FSet.Usage()
@@ -80,6 +84,8 @@ func (c *BlobCommand) Handle(ctx context.Context, b *strings.Builder, o *Operati
 		return c.delete(ctx, b, o)
 	case "update":
 		return c.update(ctx, b, o)
+	case "list":
+		return c.list(ctx, b, o)
 	}
 
 	return nil
@@ -273,5 +279,34 @@ func (c *BlobCommand) processFile(b *strings.Builder, response *Response) error 
 
 	b.WriteString("Successfull\n")
 	b.WriteString("File saved to " + path)
+	return nil
+}
+
+func (c *BlobCommand) list(ctx context.Context, b *strings.Builder, o *Operation) error {
+	headers := map[string]string{}
+	if err := o.Session.Authenticate(headers); err != nil {
+		return err
+	}
+
+	response, err := o.Client.Get(ctx, "engine/secrets/blobs", headers)
+	if err != nil {
+		return err
+	}
+
+	type blob struct {
+		Key string `json:"key"`
+	}
+
+	resp := map[string][]blob{}
+	if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
+		return err
+	}
+
+	b.WriteString("Successfull\n")
+	b.WriteString("Tokens count: " + strconv.Itoa(len(resp["value"])) + "\n")
+	for _, v := range resp["value"] {
+		b.WriteString(fmt.Sprintf("KEY: %s\n", v.Key))
+	}
+
 	return nil
 }

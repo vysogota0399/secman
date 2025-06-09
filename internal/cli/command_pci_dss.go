@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -75,6 +76,9 @@ func (c *CommandPCIDSS) Parse(args []string) error {
 		c.operation = "delete"
 		c.FSet.StringVar(&c.panToken, "pt", "", "PAN Token")
 		return c.FSet.Parse(args[2:])
+	case "list":
+		c.operation = "list"
+		return c.FSet.Parse(args[2:])
 	}
 
 	return nil
@@ -90,6 +94,8 @@ func (c *CommandPCIDSS) Handle(ctx context.Context, b *strings.Builder, o *Opera
 		return c.update(ctx, b, o)
 	case "delete":
 		return c.delete(ctx, b, o)
+	case "list":
+		return c.list(ctx, b, o)
 	}
 
 	return nil
@@ -263,5 +269,33 @@ func (c *CommandPCIDSS) delete(ctx context.Context, b *strings.Builder, o *Opera
 
 	b.WriteString("Successfull")
 
+	return nil
+}
+
+func (c *CommandPCIDSS) list(ctx context.Context, b *strings.Builder, o *Operation) error {
+	headers := map[string]string{}
+	if err := o.Session.Authenticate(headers); err != nil {
+		return err
+	}
+
+	response, err := o.Client.Get(ctx, "engine/secrets/pci_dss", headers)
+	if err != nil {
+		return err
+	}
+
+	type card struct {
+		Key string `json:"key"`
+	}
+
+	resp := map[string][]card{}
+	if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
+		return err
+	}
+
+	b.WriteString("Successfull\n")
+	b.WriteString("Tokens count: " + strconv.Itoa(len(resp["value"])) + "\n")
+	for _, v := range resp["value"] {
+		b.WriteString(fmt.Sprintf("KEY: %s\n", v.Key))
+	}
 	return nil
 }

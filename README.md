@@ -170,6 +170,12 @@ value: qwerty123
 Successfull
 created_at: 2025-06-03T23:17:18+03:00
 
+# чтение списка секретов
+➜  secman git:(review) ✗ secman kv list   
+Successfull
+KEYS COUNT: 1
+KEY: /pg/standalone
+
 # удаление
 ➜  secman git:(core) ✗ secman kv delete -h                       
 Usage: secman kv <operation> [-k <key>] [-v <value>] -fiz=<baz>...
@@ -220,6 +226,16 @@ github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgI
 Successfull
 file_name: go.sum
 created_at: 2025-06-03T23:24:04.405766+03:00
+
+# список секретов
+➜  secman git:(review) ✗ secman blob list 
+Successfull
+Tokens count: 5
+KEY: /QYwj_YEmcIwFoye26d3+Wp3mLBK1bHamM7n4cRtPkxhyA_M1zYvu6eaycRA8d+SH2PWqjUNlcMP8HO8RcbJAIg==
+KEY: /jkvxb79YCwDoUP_1_SMIyGIKdavPEbMn4H_p37Vy_I7bsBJ71fxd1gwqE2QVStl6ycA9nrwrWXHKnI8A1ucgmg==
+KEY: /J92sBUfnaKkjLWuWR6DZy9_e6ggKRATJgRaNavKzQTj_Qs9VRKvQI135xHasuyxHSH8q7uTlr4I461CZoq6k7g==
+KEY: /a4jIbameJiNwCtc1870sOZ5LvFXKgFGXvKk8oGCGOE0uHPN1WQiUAZ7K8EBEFpVni79D98EPzN8tpT4gHTKeFw==
+KEY: /Y8cS7upeVZH2pGaMxJ9FWRJiFEf1ut16l6CPOpFngd6EHZIpybci8Som8zTt3gtypxzJcwDxgB1VUvOnSLrvng==
 
 # добавление matadata
 ➜  secman git:(core) ✗ secman blob update -h                                                                                              
@@ -309,6 +325,14 @@ value: 25/01
 ➜  secman git:(core) ✗ secman pci_dss read -sc zo7zPDkpNZoETbFi8TV_p_16cDjacbYKXxc9p7AD8JEXpW7MwLPsRblUU6f1V7bR4MJsXPPwGIb8HDaDbZbDyg== -pt da6e52dd623612040283f90c5df7bada907a0527bda5520a61dbe0902ce1c754
 Successfull
 value: 123
+
+# список секретов
+Successfull
+Tokens count: 4
+KEY: /da6e52dd623612040283f90c5df7bada907a0527bda5520a61dbe0902ce1c754/expiry_date/XZUYfc_i8edjqDlOV6y6ACJ4A69qdzSWP_DmbVbuHsextJYQWgcz_CtegM4qtbZfiOLtiXItGBKjH4kDaelLSA==
+KEY: /da6e52dd623612040283f90c5df7bada907a0527bda5520a61dbe0902ce1c754/security_code/ABmS6RuxccMcEKBjuyCxSX6vaTnE977CjUYMTbGxYzzZMYbAwysHY6A+irEPyqEJiPSbAxVOX+BxrFsxGmS1dQ==
+KEY: /da6e52dd623612040283f90c5df7bada907a0527bda5520a61dbe0902ce1c754
+KEY: /da6e52dd623612040283f90c5df7bada907a0527bda5520a61dbe0902ce1c754/cardholder_name/5UMDBuAD6yFXqSGdRekUgaXC4VHefe0WrTRSINYfOhwtLAlKojUrIRfbaCqAU3XI1QKvV+3sv5lfUqpldaF9Hg==
 
 # удаление
 ➜  secman git:(core) ✗ secman pci_dss delete -h                                                                                                                                                             
