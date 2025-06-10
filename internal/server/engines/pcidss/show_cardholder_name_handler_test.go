@@ -1,0 +1,143 @@
+package pcidss
+
+import (
+	"context"
+	"net/http"
+	"sync/atomic"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"github.com/vysogota0399/secman/internal/server"
+)
+
+func TestBackend_ShowCardholderNameHandler(t *testing.T) {
+	ctrl := server.NewController(t)
+	defer ctrl.Finish()
+
+	lg := server.NewLogger(t)
+
+	type fields struct {
+		exist    *atomic.Bool
+		router   *server.BackendRouter
+		metadata *MetadataRepository
+	}
+	type args struct {
+		ctx    context.Context
+		req    *server.LogicalRequest
+		params *server.LogicalParams
+	}
+	tests := []struct {
+		name    string
+		fields  *fields
+		args    args
+		want    *server.LogicalResponse
+		wantErr bool
+		prepare func(mockStorage *server.MockILogicalStorage, b *Backend)
+	}{
+		{
+			name: "successful retrieval",
+			fields: &fields{
+				exist:    &atomic.Bool{},
+				router:   nil,
+				metadata: &MetadataRepository{},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &server.LogicalRequest{},
+				params: &server.LogicalParams{
+					Params: map[string]string{
+						"pan_token":             "test_pan_token",
+						"cardholder_name_token": "test_name_token",
+					},
+				},
+			},
+			want: &server.LogicalResponse{
+				Status:  http.StatusOK,
+				Message: gin.H{"value": "John Doe"},
+			},
+			wantErr: false,
+			prepare: func(mockStorage *server.MockILogicalStorage, b *Backend) {
+				mockStorage.EXPECT().
+					GetOk(gomock.Any(), gomock.Any()).
+					Return(server.Entry{Value: "John Doe"}, true, nil)
+			},
+		},
+		{
+			name: "cardholder name not found",
+			fields: &fields{
+				exist:    &atomic.Bool{},
+				router:   nil,
+				metadata: &MetadataRepository{},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &server.LogicalRequest{},
+				params: &server.LogicalParams{
+					Params: map[string]string{
+						"pan_token":             "test_pan_token",
+						"cardholder_name_token": "test_name_token",
+					},
+				},
+			},
+			want: &server.LogicalResponse{
+				Status:  http.StatusNotFound,
+				Message: gin.H{"error": "cardholder name not found"},
+			},
+			wantErr: false,
+			prepare: func(mockStorage *server.MockILogicalStorage, b *Backend) {
+				mockStorage.EXPECT().
+					GetOk(gomock.Any(), gomock.Any()).
+					Return(server.Entry{}, false, nil)
+			},
+		},
+		{
+			name: "storage error",
+			fields: &fields{
+				exist:    &atomic.Bool{},
+				router:   nil,
+				metadata: &MetadataRepository{},
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &server.LogicalRequest{},
+				params: &server.LogicalParams{
+					Params: map[string]string{
+						"pan_token":             "test_pan_token",
+						"cardholder_name_token": "test_name_token",
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+			prepare: func(mockStorage *server.MockILogicalStorage, b *Backend) {
+				mockStorage.EXPECT().
+					GetOk(gomock.Any(), gomock.Any()).
+					Return(server.Entry{}, false, assert.AnError)
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockStorage := server.NewMockILogicalStorage(ctrl)
+			b := &Backend{
+				exist:    tt.fields.exist,
+				router:   tt.fields.router,
+				repo:     NewRepository(mockStorage, lg),
+				metadata: tt.fields.metadata,
+				lg:       lg,
+			}
+			tt.prepare(mockStorage, b)
+
+			got, err := b.ShowCardholderNameHandler(tt.args.ctx, tt.args.req, tt.args.params)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want.Status, got.Status)
+				assert.Equal(t, tt.want.Message, got.Message)
+			}
+		})
+	}
+}
