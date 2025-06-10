@@ -11,6 +11,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// ISession представляет собой интерфейс для работы с сессией.
+// Сессия позволяет хранить данные между вызовами команд и описывает интерфейс для авторизации на сервере.
 type ISession interface {
 	Init(ctx context.Context) error
 	Persist() error
@@ -23,6 +25,8 @@ type ISession interface {
 	GetAuthProvider(ap string) AuthProvider
 }
 
+// Operation представляет собой структуру для работы с командой.
+// Она содержит сессию и клиент для взаимодействия с сервером.
 type Operation struct {
 	Session ISession
 	Client  IClient
@@ -36,6 +40,14 @@ func NewOperation(s ISession, c IClient) *Operation {
 	}
 }
 
+// Run отвечает за выполнение бизнес логики.
+// Она принимает аргументы командной строки, команды, сессию, логгер, конфигурацию и клиент.
+// Выполняет следующие действия:
+// 1. Инициализирует сессию данными из хранилища
+// 2. Парсит аргументы команды
+// 3. Выполняет команду
+// 4. Сохраняет сессию в хранилище
+// 5. Выводит результат выполнения команды
 func Run(
 	args []string,
 	cmds map[string]ICommand,

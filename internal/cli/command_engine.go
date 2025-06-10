@@ -12,6 +12,9 @@ import (
 	"strings"
 )
 
+// EngineCommand представляет собой команду для управления движками. Доступные команды:
+// - enable <engine_path> - включает авторизацию через указанный движок авторизации, например logopass или kv
+// - disable <engine_path> - отключает авторизацию через указанный движок авторизации(не реализовано)
 type EngineCommand struct {
 	FSet *flag.FlagSet
 }

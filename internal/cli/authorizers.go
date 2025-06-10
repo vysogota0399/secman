@@ -2,6 +2,8 @@ package cli
 
 import "errors"
 
+
+// LogopassAuthProvider позволяет проводить авторизацию через логин/пароль
 type LogopassAuthProvider struct {
 	tokenPath string
 }
@@ -33,6 +35,7 @@ func (a *LogopassAuthProvider) GetToken(session ISession) (string, bool) {
 	return t, ok
 }
 
+// RootTokenAuthProvider позволяет проводить авторизацию через root токен
 type RootTokenAuthProvider struct {
 	tokenPath string
 }

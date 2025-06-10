@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+// LogopassCommand представляет собой команду для управления авторизацией через логин/пароль. Доступные команды:
+// - login <username> <password> - авторизуется в сервисе и сохраняет токен в сессии
+// - register <username> <password> - регистрируется в сервисе и сохраняет токен в сессии
+// Активация/Деактивация движка авторизации происходит в команде auth
 type LogopassCommand struct {
 	FSet      *flag.FlagSet
 	username  string

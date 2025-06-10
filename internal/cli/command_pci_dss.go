@@ -12,6 +12,12 @@ import (
 	"strings"
 )
 
+// CommandPCIDSS представляет собой команду для управления секретами банковских карт. Доступные команды:
+// - write <pan> <cardholderName> <expiryDate> <securityCode> - записывает секрет в сервис
+// - read <panToken> - читает секрет из сервиса/читает его метаданные
+// - update <panToken> <key>=<value> - обновляет метаданные секрета
+// - delete <panToken> - удаляет секрет из сервиса
+// - list - выводит список всех секретов
 type CommandPCIDSS struct {
 	FSet           *flag.FlagSet
 	operation      string

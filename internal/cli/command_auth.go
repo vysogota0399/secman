@@ -10,6 +10,9 @@ import (
 	"strings"
 )
 
+// AuthCommand представляет собой команду для управления авторизацией в сервисе. Доступные команды:
+// - enable <engine_path> - включает авторизацию через указанный движок авторизации, например logopass
+// - disable <engine_path> - отключает авторизацию через указанный движок авторизации(не реализовано)
 type AuthCommand struct {
 	FSet   *flag.FlagSet
 	enable bool

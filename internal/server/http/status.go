@@ -1,0 +1,30 @@
+package http
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/vysogota0399/secman/internal/server"
+)
+
+type Status struct {
+	core *server.Core
+}
+
+func NewStatus(core *server.Core) *Status {
+	return &Status{core: core}
+}
+
+func (h *Status) Handler() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		status := map[string]any{
+			"sealed":      h.core.IsSealed.Load(),
+			"initialized": h.core.IsInitialized.Load(),
+			"barrier":     h.core.Barrier.Info(),
+			"version":     h.core.BuildVersion,
+			"build_date":  h.core.BuildDate,
+		}
+
+		c.JSON(http.StatusOK, status)
+	}
+}

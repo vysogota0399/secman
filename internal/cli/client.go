@@ -17,6 +17,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Client представляет собой клиент для взаимодействия с сервером
 type Client struct {
 	session ISession
 	client  HTTP
@@ -210,6 +211,7 @@ func (c *Client) CopyBuffer(resp *http.Response) (io.Reader, error) {
 	return response, nil
 }
 
+// HandleResponse обрабатывает ответ от сервера и возвращает Response в зависимости от статуса ответа
 func (c *Client) HandleResponse(resp *http.Response) (*Response, error) {
 	defer resp.Body.Close()
 
@@ -290,6 +292,7 @@ func (c *Client) HandleResponse(resp *http.Response) (*Response, error) {
 	}
 }
 
+// ClientCacheWrapper обертка над клиентом, позволяет кэшировать ответы на GET запросы к серверу
 type ClientCacheWrapper struct {
 	client  IClient
 	lg      *logging.ZapLogger

@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// StatusCommand представляет собой команду для вывода информации о сервере.
 type StatusCommand struct {
 	FSet *flag.FlagSet
 }
